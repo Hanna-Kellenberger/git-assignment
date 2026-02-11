@@ -1,2 +1,2 @@
 Name: Deepshikha Machireddy
-Name: Ivan Leong
+Ivan Leong
