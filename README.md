@@ -9,7 +9,7 @@ Team #7
 - Hanna Kellenberger
 - Deepshikha Machireddy
 - Ivan Leong​
-- xxxx xxxx
+- Josias Acha
 - xxxx xxxx
 
 <h4>Statement of Work: </h4>
