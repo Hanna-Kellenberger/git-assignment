@@ -10,7 +10,7 @@ Team #7
 - Deepshikha Machireddy
 - Ivan Leong​
 - Josias Acha
-- xxxx xxxx
+- Divyanshu Krishna Shivran
 
 <h4>Statement of Work: </h4>
 ...short summary...
