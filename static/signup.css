@@ -1,0 +1,145 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: #5b8db8;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 100vh;
+    padding: 40px 80px;
+    gap: 80px;
+}
+
+.auth-left {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-logo {
+    width: 480px;
+    max-width: 46vw;
+    mix-blend-mode: multiply;
+}
+
+.auth-card {
+    background: white;
+    border-radius: 16px;
+    padding: 44px 40px;
+    width: 360px;
+    min-width: 320px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.auth-card h2 {
+    font-size: 21px;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 13px;
+    color: #333;
+    font-weight: 600;
+}
+
+.label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.forgot {
+    font-size: 12px;
+    color: #3a6fcc;
+    text-decoration: none;
+}
+
+.forgot:hover { text-decoration: underline; }
+
+.form-group input {
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    outline: none;
+    width: 100%;
+    color: #333;
+    transition: border 0.2s;
+}
+
+.form-group input:focus { border-color: #3a6fcc; }
+
+.input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-wrap input { padding-right: 40px; }
+
+.eye {
+    position: absolute;
+    right: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    user-select: none;
+    color: #888;
+}
+
+.btn-primary {
+    background: #3a6fcc;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s;
+    margin-top: 4px;
+}
+
+.btn-primary:hover { background: #2a5ab8; }
+
+.switch-auth {
+    text-align: center;
+    font-size: 13px;
+    color: #888;
+}
+
+.switch-auth a {
+    color: #3a6fcc;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.switch-auth a:hover { text-decoration: underline; }
+
+.flash-msg {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+}
