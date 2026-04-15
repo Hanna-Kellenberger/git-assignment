@@ -46,10 +46,12 @@ def init_db():
 
 @app.route("/")
 def index():
-    return redirect(url_for("dashboard"))
+    return render_template("index.html")
 
 @app.route("/dashboard")
 def dashboard():
+    if "user" not in session:
+        return redirect(url_for("login"))
     return render_template("Dashboard.html")
 
 # --- Template API ---
@@ -106,6 +108,8 @@ def delete_template(tid):
 
 @app.route("/resume/<int:tid>")
 def resume(tid):
+    if "user" not in session:
+        return redirect(url_for("login"))
     with get_db() as conn:
         template = conn.execute("SELECT * FROM templates WHERE id = ?", (tid,)).fetchone()
     if not template:
@@ -113,6 +117,7 @@ def resume(tid):
     return render_template("resume.html", template=dict(template))
 
 
+@app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
         email = request.form.get("email")
@@ -120,12 +125,11 @@ def signup():
         try:
             with get_db() as conn:
                 conn.execute(
-                    "INSERT INTO users (email, password) VALUES (?, ?)",
-                    (email, generate_password_hash(password))
+                    "INSERT INTO users (email, username, password) VALUES (?, ?, ?)",
+                    (email, email, generate_password_hash(password))
                 )
             session["user"] = email
-            flash("Account created successfully!")
-            return redirect(url_for("index"))
+            return redirect(url_for("dashboard"))
         except sqlite3.IntegrityError:
             flash("Account already exists. Please log in.")
             return redirect(url_for("login"))
@@ -147,7 +151,7 @@ def login():
 @app.route("/logout")
 def logout():
     session.pop("user", None)
-    return redirect(url_for("index"))
+    return redirect(url_for("login"))
 
 if __name__ == "__main__":
     init_db()
