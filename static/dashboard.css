@@ -1,0 +1,133 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #fff;
+    color: #1a1a2e;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 32px;
+    border-bottom: 1px solid #ddd;
+}
+
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.brand {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a3a6e;
+    letter-spacing: -0.5px;
+}
+
+.brand span {
+    color: #1a3a6e;
+    font-style: italic;
+}
+
+.search-bar {
+    padding: 10px 20px;
+    width: 380px;
+    border: none;
+    border-radius: 6px;
+    background: #d9d9d9;
+    font-size: 15px;
+    color: #555;
+    outline: none;
+}
+
+.search-bar::placeholder {
+    color: #777;
+}
+
+.btn-create {
+    background: #1a3a6e;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 22px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-create:hover {
+    background: #14305c;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0 32px;
+    border-bottom: 1px solid #ddd;
+    margin-top: 4px;
+}
+
+.tab {
+    padding: 14px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    color: #333;
+    border-bottom: 3px solid transparent;
+    transition: all 0.15s;
+}
+
+.tab.active {
+    background: #1a3a6e;
+    color: #fff;
+    border-radius: 4px 4px 0 0;
+    border-bottom: 3px solid #1a3a6e;
+}
+
+.tab:hover:not(.active) {
+    color: #1a3a6e;
+}
+
+/* Content */
+.content {
+    padding: 28px 32px;
+}
+
+.section-title {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+/* Template Card */
+.template-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #d9d9d9;
+    border-radius: 8px;
+    padding: 20px 24px;
+    max-width: 500px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.template-card:hover {
+    background: #cacaca;
+}
+
+.template-name {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.star {
+    font-size: 24px;
+    color: #f5c518;
+}

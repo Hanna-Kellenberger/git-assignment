@@ -27,6 +27,12 @@ def init_db():
 def index():
     return render_template("index.html")
 
+@app.route("/dashboard")
+def dashboard():
+    if "user" not in session:
+        return redirect(url_for("login"))
+    return render_template("dashboard.html")
+
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
@@ -40,7 +46,7 @@ def signup():
                 )
             session["user"] = email
             flash("Account created successfully!")
-            return redirect(url_for("index"))
+            return redirect(url_for("dashboard"))
         except sqlite3.IntegrityError:
             flash("Account already exists. Please log in.")
             return redirect(url_for("login"))
@@ -55,7 +61,7 @@ def login():
             user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
         if user and check_password_hash(user["password"], password):
             session["user"] = email
-            return redirect(url_for("index"))
+            return redirect(url_for("dashboard"))
         flash("Invalid email or password.")
     return render_template("login.html")
 
