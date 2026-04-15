@@ -140,7 +140,7 @@ def login():
             user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
         if user and check_password_hash(user["password"], password):
             session["user"] = email
-            return redirect(url_for("index"))
+            return redirect(url_for("dashboard"))
         flash("Invalid email or password.")
     return render_template("login.html")
 
