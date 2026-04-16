@@ -66,5 +66,17 @@ def logout():
     session.pop("user", None)
     return redirect(url_for("login"))
 
+# ---------------------------------------------------------------------------
+# Templates API
+# ---------------------------------------------------------------------------
+
+@app.route("/api/templates", methods=["GET"])
+def get_templates():
+    try:
+        result = supabase.table("templates").select("*").order("created_at", desc=True).execute()
+        return jsonify(result.data)
+    except Exception:
+        return jsonify([]), 200
+
 if __name__ == "__main__":
     app.run(debug=True)
