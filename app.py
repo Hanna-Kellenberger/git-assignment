@@ -15,6 +15,16 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "resumaxing_secret")
 def index():
     return IndexGUI().get()
 
+@app.route("/dashboard")
+def dashboard():
+    if "user" not in session:
+        return redirect(url_for("login"))
+    return render_template("dashboard.html")
+
+# ---------------------------------------------------------------------------
+# Auth
+# ---------------------------------------------------------------------------
+
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     gui = SignupGUI()
@@ -31,6 +41,7 @@ def login():
 
 @app.route("/logout")
 def logout():
+    supabase.auth.sign_out()
     session.pop("user", None)
     return redirect(url_for("login"))
 

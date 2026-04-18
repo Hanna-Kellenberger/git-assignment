@@ -4,16 +4,21 @@ let state = {
     activeTab: 'Templates',
     search: ''
 };
- 
+
 const root = document.getElementById('root');
- 
+
 // ── API helpers ──
 async function fetchTemplates() {
-    const res = await fetch('/api/templates');
-    state.templates = await res.json();
+    try {
+        const res = await fetch('/api/templates');
+        const data = await res.json();
+        state.templates = Array.isArray(data) ? data : [];
+    } catch (e) {
+        state.templates = [];
+    }
     render();
 }
- 
+
 async function toggleFavorite(id) {
     await fetch(`/api/templates/${id}/favorite`, { method: 'PATCH' });
     await fetchTemplates();
