@@ -144,6 +144,17 @@ body {
     color: #222;
 }
 
+.template-name-block {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.template-meta {
+    font-size: 12px;
+    color: #888;
+}
+
 .template-actions {
     display: flex;
     align-items: center;

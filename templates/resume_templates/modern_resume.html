@@ -1,0 +1,60 @@
+<!-- Modern Resume Layout -->
+<div class="resume modern-resume">
+    <div class="resume-header">
+        <div class="resume-name-block">
+            <h1 class="resume-name" data-field="name">{{name}}</h1>
+            <p class="resume-title" data-field="title">{{title}}</p>
+        </div>
+        <div class="resume-contact">
+            <span data-field="email">{{email}}</span>
+            <span data-field="phone">{{phone}}</span>
+            <span data-field="location">{{location}}</span>
+            <span data-field="linkedin">{{linkedin}}</span>
+        </div>
+    </div>
+
+    <div class="resume-section">
+        <h2 class="section-heading">Summary</h2>
+        <p data-field="summary">{{summary}}</p>
+    </div>
+
+    <div class="resume-section">
+        <h2 class="section-heading">Experience</h2>
+        <div data-list="experience">
+            {{#experience}}
+            <div class="resume-entry" data-entry>
+                <div class="entry-header">
+                    <strong data-field="role">{{role}}</strong>
+                    <span data-field="dates">{{dates}}</span>
+                </div>
+                <div class="entry-sub" data-field="company">{{company}}</div>
+                <ul data-bullets="bullets">
+                    {{#bullets}}<li data-bullet>{{.}}</li>{{/bullets}}
+                </ul>
+            </div>
+            {{/experience}}
+        </div>
+    </div>
+
+    <div class="resume-section">
+        <h2 class="section-heading">Education</h2>
+        <div data-list="education">
+            {{#education}}
+            <div class="resume-entry" data-entry>
+                <div class="entry-header">
+                    <strong data-field="degree">{{degree}}</strong>
+                    <span data-field="dates">{{dates}}</span>
+                </div>
+                <div class="entry-sub" data-field="school">{{school}}</div>
+            </div>
+            {{/education}}
+        </div>
+    </div>
+
+    <div class="resume-section">
+        <h2 class="section-heading">Skills</h2>
+        <div class="skills-list" data-list="skills">
+            {{#skills}}<span class="skill-tag" data-skill>{{.}}</span>{{/skills}}
+        </div>
+    </div>
+</div>
