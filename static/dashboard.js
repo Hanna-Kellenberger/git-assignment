@@ -29,7 +29,7 @@ async function toggleFavorite(id) {
     await fetchTemplates();
     render();
 }
-
+ 
 async function deleteTemplate(id) {
     await fetch(`/api/templates/${id}`, { method: 'DELETE' });
     await fetchTemplates();
@@ -41,7 +41,7 @@ async function deleteUserResume(id) {
     await fetchUserResumes();
     render();
 }
-
+ 
 // ── Filtering ──
 function getVisibleTemplates() {
     let list = state.templates;
@@ -71,7 +71,7 @@ function groupByCategory(list) {
         return acc;
     }, {});
 }
-
+ 
 function escHtml(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -151,29 +151,29 @@ function render() {
                 />
                 <button class="btn-create" id="btnCreate">+ Create New Resume</button>
             </div>
-
+ 
             <div class="tabs">
                 ${['Templates', 'Recent', 'Favorites'].map(tab => `
                     <div class="tab ${state.activeTab === tab ? 'active' : ''}" data-tab="${tab}">${tab}</div>
                 `).join('')}
             </div>
-
+ 
             <div class="dash-content">
                 ${contentHtml}
             </div>
         </div>
     `;
-
+ 
     attachEvents();
 }
-
+ 
 // ── Events ──
 function attachEvents() {
     document.getElementById('searchInput').addEventListener('input', e => {
         state.search = e.target.value;
         render();
     });
-
+ 
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
             state.activeTab = tab.dataset.tab;
@@ -181,20 +181,20 @@ function attachEvents() {
             render();
         });
     });
-
+ 
     document.getElementById('btnCreate').addEventListener('click', () => {
         // Switch to Templates tab so user picks a template
         state.activeTab = 'Templates';
         render();
     });
-
+ 
     document.querySelectorAll('.template-item').forEach(item => {
         item.addEventListener('click', e => {
             if (e.target.closest('.star-btn') || e.target.closest('.delete-btn')) return;
             window.location.href = item.dataset.href;
         });
     });
-
+ 
     document.querySelectorAll('.star-btn').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -218,6 +218,6 @@ function attachEvents() {
         });
     });
 }
-
+ 
 // ── Boot ──
 loadAll();

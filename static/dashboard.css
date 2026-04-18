@@ -1,4 +1,5 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
+ 
 
 body {
     background: #fff;
@@ -8,6 +9,7 @@ body {
     font-family: 'Segoe UI', Arial, sans-serif;
     overflow: hidden;
 }
+ 
 
 /* ── Top bar ── */
 .topbar {
@@ -18,6 +20,7 @@ body {
     letter-spacing: 0.3px;
     flex-shrink: 0;
 }
+ 
 
 /* ── Main card ── */
 .dashboard-card {
@@ -27,6 +30,7 @@ body {
     flex-direction: column;
     overflow: hidden;
 }
+ 
 
 /* ── Header row ── */
 .dash-header {
@@ -36,11 +40,13 @@ body {
     padding: 18px 24px;
     border-bottom: 1px solid #e5e7eb;
 }
+ 
 
 .dash-logo {
     height: 32px;
     flex-shrink: 0;
 }
+ 
 
 .search-bar {
     flex: 1;
@@ -52,7 +58,7 @@ body {
     color: #555;
     outline: none;
 }
-
+ 
 .search-bar::placeholder { color: #888; }
 
 .btn-create {
@@ -67,9 +73,9 @@ body {
     white-space: nowrap;
     transition: background 0.2s;
 }
-
+ 
 .btn-create:hover { background: #163a8f; }
-
+ 
 /* ── Tabs ── */
 .tabs {
     display: flex;
@@ -77,7 +83,7 @@ body {
     padding: 0 24px;
     border-bottom: 2px solid #e5e7eb;
 }
-
+ 
 .tab {
     padding: 12px 16px;
     font-size: 15px;
@@ -87,7 +93,7 @@ body {
     margin-bottom: -2px;
     transition: color 0.15s;
 }
-
+ 
 .tab.active {
     color: #fff;
     background: #1e4db7;
@@ -95,30 +101,30 @@ body {
     border-bottom-color: #1e4db7;
     font-weight: 600;
 }
-
+ 
 .tab:not(.active):hover { color: #1e4db7; }
-
+ 
 /* ── Content area ── */
 .dash-content {
     padding: 24px;
     flex: 1;
     overflow-y: auto;
 }
-
+ 
 .section-title {
     font-size: 16px;
     font-weight: 700;
     color: #111;
     margin-bottom: 14px;
 }
-
+ 
 /* ── Template list ── */
 .template-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
-
+ 
 .template-item {
     display: flex;
     align-items: center;
@@ -130,15 +136,15 @@ body {
     transition: background 0.15s;
     background: #fff;
 }
-
+ 
 .template-item:first-child {
     background: #d1d5db;
     border-color: #d1d5db;
 }
-
+ 
 .template-item:hover { background: #f3f4f6; }
 .template-item:first-child:hover { background: #c4c9d4; }
-
+ 
 .template-name {
     font-size: 15px;
     color: #222;
@@ -160,7 +166,7 @@ body {
     align-items: center;
     gap: 10px;
 }
-
+ 
 .star-btn {
     background: none;
     border: none;
@@ -170,12 +176,12 @@ body {
     padding: 0;
     transition: transform 0.15s;
 }
-
+ 
 .star-btn:hover { transform: scale(1.2); }
-
+ 
 .star-btn.favorited { color: #e6c200; }
 .star-btn:not(.favorited) { color: #ccc; }
-
+ 
 .delete-btn {
     background: none;
     border: none;
@@ -186,7 +192,7 @@ body {
     transition: color 0.15s;
     display: none;
 }
-
+ 
 .edit-btn {
     background: none;
     border: none;
@@ -195,11 +201,11 @@ body {
     padding: 0;
     display: none;
 }
-
+ 
 .template-item:hover .edit-btn { display: inline; }
 .template-item:hover .delete-btn { display: inline; }
 .delete-btn:hover { color: #e53e3e; }
-
+ 
 /* ── Empty state ── */
 .empty-state {
     text-align: center;
@@ -207,7 +213,7 @@ body {
     padding: 48px 0;
     font-size: 15px;
 }
-
+ 
 /* ── Modal ── */
 .modal-overlay {
     position: fixed;
@@ -218,7 +224,7 @@ body {
     justify-content: center;
     z-index: 100;
 }
-
+ 
 .modal {
     background: #fff;
     border-radius: 12px;
@@ -230,13 +236,13 @@ body {
     flex-direction: column;
     gap: 16px;
 }
-
+ 
 .modal h3 {
     font-size: 18px;
     font-weight: 700;
     color: #111;
 }
-
+ 
 .modal label {
     font-size: 13px;
     font-weight: 600;
@@ -244,7 +250,7 @@ body {
     display: block;
     margin-bottom: 4px;
 }
-
+ 
 .modal input, .modal select {
     width: 100%;
     border: 1px solid #d0d5dd;
@@ -254,15 +260,15 @@ body {
     outline: none;
     color: #333;
 }
-
+ 
 .modal input:focus, .modal select:focus { border-color: #1e4db7; }
-
+ 
 .modal-actions {
     display: flex;
     gap: 10px;
     justify-content: flex-end;
 }
-
+ 
 .btn-cancel {
     background: #f3f4f6;
     color: #555;
@@ -272,9 +278,9 @@ body {
     font-size: 14px;
     cursor: pointer;
 }
-
+ 
 .btn-cancel:hover { background: #e5e7eb; }
-
+ 
 .btn-save {
     background: #1e4db7;
     color: #fff;
@@ -285,5 +291,6 @@ body {
     font-weight: 600;
     cursor: pointer;
 }
-
+ 
 .btn-save:hover { background: #163a8f; }
+ 
