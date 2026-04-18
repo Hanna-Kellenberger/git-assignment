@@ -23,12 +23,12 @@ async function toggleFavorite(id) {
     await fetch(`/api/templates/${id}/favorite`, { method: 'PATCH' });
     await fetchTemplates();
 }
-
+ 
 async function deleteTemplate(id) {
     await fetch(`/api/templates/${id}`, { method: 'DELETE' });
     await fetchTemplates();
 }
-
+ 
 // ── Filtering ──
 function getVisible() {
     let list = state.templates;
@@ -40,7 +40,7 @@ function getVisible() {
     }
     return list;
 }
-
+ 
 // ── Group by category ──
 function groupByCategory(list) {
     return list.reduce((acc, t) => {
@@ -50,16 +50,16 @@ function groupByCategory(list) {
         return acc;
     }, {});
 }
-
+ 
 function escHtml(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
+ 
 // ── Render ──
 function render() {
     const visible = getVisible();
     const grouped = groupByCategory(visible);
-
+ 
     root.innerHTML = `
         <div class="topbar">Dashboard</div>
         <div class="dashboard-card">
@@ -74,13 +74,13 @@ function render() {
                 />
                 <button class="btn-create" id="btnCreate">+ Create New Resume</button>
             </div>
-
+ 
             <div class="tabs">
                 ${['Templates', 'Recent', 'Favorites'].map(tab => `
                     <div class="tab ${state.activeTab === tab ? 'active' : ''}" data-tab="${tab}">${tab}</div>
                 `).join('')}
             </div>
-
+ 
             <div class="dash-content">
                 ${Object.keys(grouped).length === 0
                     ? `<div class="empty-state">No templates found.</div>`
@@ -101,42 +101,42 @@ function render() {
             </div>
         </div>
     `;
-
+ 
     attachEvents();
 }
-
+ 
 // ── Events ──
 function attachEvents() {
     document.getElementById('searchInput').addEventListener('input', e => {
         state.search = e.target.value;
         render();
     });
-
+ 
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
             state.activeTab = tab.dataset.tab;
             render();
         });
     });
-
+ 
     document.getElementById('btnCreate').addEventListener('click', () => {
         window.location.href = '/resume/new';
     });
-
+ 
     document.querySelectorAll('.template-item').forEach(item => {
         item.addEventListener('click', e => {
             if (e.target.closest('.star-btn') || e.target.closest('.delete-btn')) return;
             window.location.href = item.dataset.href;
         });
     });
-
+ 
     document.querySelectorAll('.star-btn').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
             toggleFavorite(parseInt(btn.dataset.fav));
         });
     });
-
+ 
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -144,6 +144,8 @@ function attachEvents() {
         });
     });
 }
-
+ 
 // ── Boot ──
 fetchTemplates();
+ 
+ 
