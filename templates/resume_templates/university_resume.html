@@ -1,0 +1,70 @@
+<!-- University Resume Layout -->
+<div class="resume university-resume">
+    <div class="resume-header university-header">
+        <h1 class="resume-name" data-field="name">{{name}}</h1>
+        <div class="resume-contact">
+            <span data-field="email">{{email}}</span>
+            <span data-field="phone">{{phone}}</span>
+            <span data-field="university">{{university}}</span>
+            <span data-field="graduation">Graduating: {{graduation}}</span>
+        </div>
+    </div>
+
+    <div class="resume-section">
+        <h2 class="section-heading">Objective</h2>
+        <p data-field="summary">{{summary}}</p>
+    </div>
+
+    <div class="resume-section">
+        <h2 class="section-heading">Education</h2>
+        <div data-list="education">
+            {{#education}}
+            <div class="resume-entry" data-entry>
+                <div class="entry-header">
+                    <strong data-field="degree">{{degree}}</strong>
+                    <span data-field="dates">{{dates}}</span>
+                </div>
+                <div class="entry-sub" data-field="school">{{school}}</div>
+            </div>
+            {{/education}}
+        </div>
+        <p style="margin-top:6px;font-size:13px;">GPA: <strong data-field="gpa">{{gpa}}</strong></p>
+    </div>
+
+    <div class="resume-section">
+        <h2 class="section-heading">Experience</h2>
+        <div data-list="experience">
+            {{#experience}}
+            <div class="resume-entry" data-entry>
+                <div class="entry-header">
+                    <strong data-field="role">{{role}}</strong>
+                    <span data-field="dates">{{dates}}</span>
+                </div>
+                <div class="entry-sub" data-field="company">{{company}}</div>
+                <ul data-bullets="bullets">
+                    {{#bullets}}<li data-bullet>{{.}}</li>{{/bullets}}
+                </ul>
+            </div>
+            {{/experience}}
+        </div>
+    </div>
+
+    <div class="resume-section">
+        <h2 class="section-heading">Projects</h2>
+        <div data-list="projects">
+            {{#projects}}
+            <div class="resume-entry" data-entry>
+                <strong data-field="name">{{name}}</strong>
+                <p data-field="description">{{description}}</p>
+            </div>
+            {{/projects}}
+        </div>
+    </div>
+
+    <div class="resume-section">
+        <h2 class="section-heading">Skills</h2>
+        <div class="skills-list" data-list="skills">
+            {{#skills}}<span class="skill-tag" data-skill>{{.}}</span>{{/skills}}
+        </div>
+    </div>
+</div>
