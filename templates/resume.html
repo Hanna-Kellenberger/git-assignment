@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ template.name }} - Resumaxing</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #2c2c2c;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        .back-btn {
+            position: fixed;
+            top: 16px;
+            left: 20px;
+            background: #1e4db7;
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            padding: 9px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: #163a8f; }
+        .placeholder-card {
+            background: #fff;
+            border-radius: 10px;
+            width: 680px;
+            max-width: 94vw;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+            padding: 48px;
+        }
+        .placeholder-icon { font-size: 56px; }
+        .placeholder-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111;
+        }
+        .placeholder-sub {
+            font-size: 14px;
+            color: #888;
+        }
+        .template-badge {
+            background: #e8eef8;
+            color: #1e4db7;
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
+    <div class="placeholder-card">
+        <div class="placeholder-icon">📄</div>
+        <div class="template-title">{{ template.name }}</div>
+        <span class="template-badge">{{ template.category }}</span>
+        <p class="placeholder-sub">Resume editor coming soon — file: {{ template.html_file }}</p>
+    </div>
+</body>
+</html>
+ 
+ 
