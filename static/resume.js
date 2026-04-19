@@ -211,7 +211,12 @@ function buildLeftPanel() {
     },
     skills: () => {
       const wrap = document.createElement('div');
-      wrap.innerHTML = `<div class="skills-row"><input id="skill-input" type="text" placeholder="e.g. JavaScript"/><button id="add-skill-btn">Add</button></div><div class="skill-tags" id="skill-tags"></div>`;
+      wrap.innerHTML = `
+        <div class="skills-row"><input id="skill-input" type="text" placeholder="e.g. JavaScript"/><button id="add-skill-btn">Add</button></div>
+        <div class="skill-tags" id="skill-tags"></div>
+        <button class="suggest-btn" id="suggest-skills-btn">✨ Suggest Skills</button>
+        <div class="suggestions-box" id="suggestions-box" style="display:none;"></div>
+      `;
       return makeSection('skills', 'Skills', true, wrap);
     },
     projects: () => {
@@ -255,6 +260,7 @@ function buildLeftPanel() {
   renderSkillTags();
   document.getElementById('add-skill-btn').addEventListener('click', addSkill);
   document.getElementById('skill-input').addEventListener('keydown', e => { if(e.key==='Enter'){e.preventDefault();addSkill();} });
+  document.getElementById('suggest-skills-btn').addEventListener('click', suggestSkills);
 
   initDragAndDrop(panel);
 }
@@ -446,6 +452,60 @@ function addSkill() {
   input.value = '';
   renderSkillTags();
   updatePreview();
+}
+
+// ── SKILL SUGGESTIONS ──
+async function suggestSkills() {
+  const btn = document.getElementById('suggest-skills-btn');
+  const box = document.getElementById('suggestions-box');
+  btn.textContent = '⏳ Thinking...';
+  btn.disabled = true;
+  box.style.display = 'none';
+
+  collectData();
+
+  try {
+    const res = await fetch('/api/suggest-skills', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: data.title || '',
+        summary: data.summary || '',
+        skills: data.skills || []
+      })
+    });
+    const json = await res.json();
+
+    if (json.error) {
+      showToast('⚠ ' + json.error, true);
+    } else {
+      box.style.display = 'flex';
+      box.innerHTML = `
+        <div class="suggestions-label">Click to add:</div>
+        ${json.suggestions.map(s => `
+          <button class="suggestion-chip" data-skill="${esc(s)}">${esc(s)}</button>
+        `).join('')}
+      `;
+      box.querySelectorAll('.suggestion-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          if (!data.skills) data.skills = [];
+          if (!data.skills.includes(chip.dataset.skill)) {
+            data.skills.push(chip.dataset.skill);
+            renderSkillTags();
+            updatePreview();
+          }
+          chip.classList.add('added');
+          chip.disabled = true;
+        });
+      });
+    }
+  } catch (e) {
+    showToast('Could not reach Ollama. Is it running?', true);
+  }
+
+  btn.textContent = '✨ Suggest Skills';
+  btn.disabled = false;
 }
 
 // ── VALIDATION & SAVE ──

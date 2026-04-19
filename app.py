@@ -201,5 +201,45 @@ def delete_user_resume(rid):
         return jsonify({"error": str(e)}), 500
     return jsonify({"deleted": rid})
 
+@app.route("/api/suggest-skills", methods=["POST"])
+def suggest_skills():
+    if "user" not in session:
+        return jsonify({"error": "unauthorized"}), 401
+    body = request.get_json()
+    title = body.get("title", "")
+    summary = body.get("summary", "")
+    existing = body.get("skills", [])
+
+    prompt = (
+        f"You are a resume expert. Based on the following information, suggest 8-10 relevant skills "
+        f"the person should add to their resume. Return ONLY a JSON array of skill strings, nothing else.\n\n"
+        f"Job Title: {title}\n"
+        f"Summary: {summary}\n"
+        f"Current Skills: {', '.join(existing) if existing else 'none'}\n\n"
+        f"Respond with only a JSON array like: [\"Skill 1\", \"Skill 2\", ...]"
+    )
+
+    try:
+        import urllib.error
+        import ollama_client
+
+        try:
+            text = ollama_client.generate(prompt)
+        except urllib.error.URLError:
+            return jsonify({"error": "Ollama is not running. Start it with: ollama serve"}), 503
+        except RuntimeError as e:
+            return jsonify({"error": str(e)}), 503
+
+        start = text.find("[")
+        end = text.rfind("]") + 1
+        if start == -1 or end == 0:
+            return jsonify({"error": "No suggestions returned"}), 500
+        suggestions = json.loads(text[start:end])
+        existing_lower = [s.lower() for s in existing]
+        suggestions = [s for s in suggestions if s.lower() not in existing_lower]
+        return jsonify({"suggestions": suggestions})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == "__main__":
     app.run(debug=True)

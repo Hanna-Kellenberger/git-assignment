@@ -122,7 +122,15 @@ body { font-family:'Segoe UI',Arial,sans-serif; background:#f3f4f6; height:100vh
 .uni-skills { display:flex; flex-wrap:wrap; gap:5px; }
 .uni-skill { background:#d8f3dc; color:#2d6a4f; border-radius:3px; padding:2px 9px; font-size:11px; font-family:'Segoe UI',sans-serif; }
 
-/* toast */
+/* suggest skills */
+.suggest-btn { background:none; border:1px solid #1e4db7; color:#1e4db7; border-radius:5px; padding:6px 10px; font-size:12px; cursor:pointer; width:100%; margin-top:8px; transition:background 0.15s; }
+.suggest-btn:hover { background:#e8eef8; }
+.suggest-btn:disabled { opacity:0.6; cursor:not-allowed; }
+.suggestions-box { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; padding:10px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px; }
+.suggestions-label { width:100%; font-size:11px; color:#888; margin-bottom:2px; }
+.suggestion-chip { background:#fff; border:1px solid #1e4db7; color:#1e4db7; border-radius:20px; padding:3px 10px; font-size:11px; cursor:pointer; transition:all 0.15s; }
+.suggestion-chip:hover { background:#1e4db7; color:#fff; }
+.suggestion-chip.added { background:#e8eef8; color:#aaa; border-color:#ddd; cursor:default; }
 .toast { position:fixed; bottom:20px; right:20px; background:#16a34a; color:#fff; padding:9px 18px; border-radius:7px; font-size:13px; font-weight:600; opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:999; }
 .toast.show { opacity:1; }
 .toast.error { background:#dc2626; }
