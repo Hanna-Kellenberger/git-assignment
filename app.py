@@ -57,16 +57,6 @@ DEFAULT_CONTENT = {
 def index():
     return render_template("index.html")
 
-@app.route("/dashboard")
-def dashboard():
-    if "user" not in session:
-        return redirect(url_for("login"))
-    return render_template("dashboard.html")
-
-# ---------------------------------------------------------------------------
-# Auth
-# ---------------------------------------------------------------------------
-
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "GET":
@@ -101,9 +91,24 @@ def login():
     except Exception as e:
         return jsonify({"error": "Invalid email or password."}), 401
 
-@app.route("/logout")
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    from gui.forgot_password_gui import ForgotPasswordGUI
+    gui = ForgotPasswordGUI()
+    if request.method == "POST":
+        return gui.post()
+    return gui.get()
+
+@app.route("/reset-password", methods=["GET", "POST"])
+def reset_password():
+    from gui.reset_password_gui import ResetPasswordGUI
+    gui = ResetPasswordGUI()
+    if request.method == "POST":
+        return gui.post()
+    return gui.get()
+
+
 def logout():
-    supabase.auth.sign_out()
     session.pop("user", None)
     return redirect(url_for("login"))
 
@@ -113,7 +118,11 @@ def logout():
 
 @app.route("/api/templates", methods=["GET"])
 def get_templates():
+<<<<<<< Updated upstream
     return jsonify(TEMPLATES)
+=======
+    return jsonify(db_select("templates"))
+>>>>>>> Stashed changes
 
 # ---------------------------------------------------------------------------
 # Resume routes
@@ -175,4 +184,4 @@ def save_resume(rid):
     return jsonify({"saved": True})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=3000)

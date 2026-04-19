@@ -1,15 +1,8 @@
 import os
 import requests
-from supabase import create_client, Client
 from dotenv import load_dotenv
 
 load_dotenv()
-
-  
-url = os.getenv("SUPABASE_URL")
-key = os.getenv("SUPABASE_KEY")
-
-supabase: Client = create_client(url, key)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -33,6 +26,23 @@ def auth_login(email, password):
         f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
         json={"email": email, "password": password},
         headers=HEADERS
+    )
+    return res.json()
+
+def auth_forgot_password(email):
+    res = requests.post(
+        f"{SUPABASE_URL}/auth/v1/recover",
+        json={"email": email},
+        headers=HEADERS
+    )
+    return res.status_code
+
+def auth_update_password(access_token, new_password):
+    headers = {**HEADERS, "Authorization": f"Bearer {access_token}"}
+    res = requests.put(
+        f"{SUPABASE_URL}/auth/v1/user",
+        json={"password": new_password},
+        headers=headers
     )
     return res.json()
 
