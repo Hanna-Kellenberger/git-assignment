@@ -137,13 +137,7 @@ body {
     background: #fff;
 }
  
-.template-item:first-child {
-    background: #d1d5db;
-    border-color: #d1d5db;
-}
- 
 .template-item:hover { background: #f3f4f6; }
-.template-item:first-child:hover { background: #c4c9d4; }
  
 .template-name {
     font-size: 15px;
