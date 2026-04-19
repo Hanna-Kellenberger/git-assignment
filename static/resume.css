@@ -131,6 +131,6 @@ body { font-family:'Segoe UI',Arial,sans-serif; background:#f3f4f6; height:100vh
 .suggestion-chip { background:#fff; border:1px solid #1e4db7; color:#1e4db7; border-radius:20px; padding:3px 10px; font-size:11px; cursor:pointer; transition:all 0.15s; }
 .suggestion-chip:hover { background:#1e4db7; color:#fff; }
 .suggestion-chip.added { background:#e8eef8; color:#aaa; border-color:#ddd; cursor:default; }
-.toast { position:fixed; bottom:20px; right:20px; background:#16a34a; color:#fff; padding:9px 18px; border-radius:7px; font-size:13px; font-weight:600; opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:999; }
+.toast { position:fixed; bottom:20px; right:20px; background:#16a34a; color:#fff; padding:12px 18px; border-radius:7px; font-size:13px; font-weight:600; opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:999; max-width:320px; line-height:1.4; }
 .toast.show { opacity:1; }
 .toast.error { background:#dc2626; }
