@@ -5,6 +5,7 @@ const TEMPLATE_TYPE  = JSON.parse(document.getElementById('template-type').textC
 const initialContent = JSON.parse(document.getElementById('resume-content').textContent);
 
 let data = JSON.parse(JSON.stringify(initialContent));
+let  hasUnsavedChanges = false;
 
 let sections = {
   summary: true, experience: true, education: true,
@@ -57,6 +58,7 @@ function collectData() {
 // ── PREVIEW ──
 function updatePreview() {
   collectData();
+  hasUnsavedChanges = true;
   const p = document.getElementById('resumePaper');
   if (TEMPLATE_TYPE === 'modern') renderModern(p);
   else if (TEMPLATE_TYPE === 'professional') renderProfessional(p);
@@ -616,6 +618,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     const json = await res.json();
     if (json.saved) {
       if (json.id) window.RESUME_ID = json.id;
+      hasUnsavedChanges = false;
       showToast('Saved! Redirecting...');
       setTimeout(() => { window.location.href = '/dashboard?tab=recent'; }, 900);
     } else {
@@ -627,8 +630,43 @@ document.getElementById('btnSave').addEventListener('click', async () => {
   }
 });
 
+function confirmExit(){
+  if(hasUnsavedChanges){
+    const msg = 'You have unsaved changes. Are you sure you want to leave?';
+    if(!confirm(msg)){
+      return false;
+    }
+    return confirm(msg);
+  }
+  return true;
+}
+
+const backBtn = document.querySelector('.back-link');
+if(backBtn) {
+  backBtn.addEventListener('click', e => {
+  if(hasUnsavedChanges) {
+    e.preventDefault();
+    if(confirm('Do you want to save changes?')) {
+      document.getElementById('btnSave').click();
+    } else {
+      data = JSON.parse(JSON.stringify(initialContent));
+      hasUnsavedChanges = false;
+      window.location.href = '/dashboard?tab=recent';
+    }
+  }
+ });
+}
+
+window.addEventListener('beforeunload', (e) => {
+  if(hasUnsavedChanges) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
 // ── BOOT ──
 buildLeftPanel();
 updatePreview();
+hasUnsavedChanges = false;
 const titleEl = document.getElementById('resume-title');
 if (titleEl) titleEl.value = initialContent._resumeTitle || '';
