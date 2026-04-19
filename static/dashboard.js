@@ -11,7 +11,7 @@ const root = document.getElementById('root');
 // ── API helpers ──
 async function fetchTemplates() {
     try {
-        const res = await fetch('/api/templates');
+        const res = await fetch('/api/templates', { credentials: 'same-origin' });
         const data = await res.json();
         state.templates = Array.isArray(data) ? data : [];
     } catch (e) {
@@ -21,7 +21,7 @@ async function fetchTemplates() {
 
 async function fetchUserResumes() {
     try {
-        const res = await fetch('/api/user-resumes');
+        const res = await fetch('/api/user-resumes', { credentials: 'same-origin' });
         const data = await res.json();
         state.userResumes = Array.isArray(data) ? data : [];
     } catch (e) {
@@ -35,19 +35,15 @@ async function loadAll() {
 }
 
 async function toggleFavorite(id) {
-    await fetch(`/api/templates/${id}/favorite`, { method: 'PATCH' });
-    await fetchTemplates();
-    render();
-}
- 
-async function deleteTemplate(id) {
-    await fetch(`/api/templates/${id}`, { method: 'DELETE' });
-    await fetchTemplates();
+    const resume = state.userResumes.find(r => r.id === id);
+    if (!resume) return;
+    await fetch(`/api/user-resumes/${id}/favorite`, { method: 'PATCH', credentials: 'same-origin' });
+    await fetchUserResumes();
     render();
 }
 
 async function deleteUserResume(id) {
-    await fetch(`/api/user-resumes/${id}`, { method: 'DELETE' });
+    await fetch(`/api/user-resumes/${id}`, { method: 'DELETE', credentials: 'same-origin' });
     await fetchUserResumes();
     render();
 }
@@ -55,7 +51,6 @@ async function deleteUserResume(id) {
 // ── Filtering ──
 function getVisibleTemplates() {
     let list = state.templates;
-    if (state.activeTab === 'Favorites') list = list.filter(t => t.is_favorite);
     if (state.search.trim()) {
         const q = state.search.toLowerCase();
         list = list.filter(t => t.name.toLowerCase().includes(q));
@@ -65,9 +60,10 @@ function getVisibleTemplates() {
 
 function getVisibleUserResumes() {
     let list = state.userResumes;
+    if (state.activeTab === 'Favorites') list = list.filter(r => r.is_favorite);
     if (state.search.trim()) {
         const q = state.search.toLowerCase();
-        list = list.filter(r => r.title.toLowerCase().includes(q) || r.template_name.toLowerCase().includes(q));
+        list = list.filter(r => (r.title || '').toLowerCase().includes(q));
     }
     return list;
 }
@@ -95,32 +91,35 @@ function formatDate(str) {
 // ── Render ──
 function render() {
     const isRecent = state.activeTab === 'Recent';
+    const isFavorites = state.activeTab === 'Favorites';
+    const showUserResumes = isRecent || isFavorites;
 
     let contentHtml;
 
-    if (isRecent) {
+    if (showUserResumes) {
         const resumes = getVisibleUserResumes();
         if (resumes.length === 0) {
-            contentHtml = `<div class="empty-state">No recent resumes yet. Click a template to get started.</div>`;
+            contentHtml = `<div class="empty-state">${isFavorites ? 'No favorites yet. Star a resume to add it here.' : 'No recent resumes yet. Click a template to get started.'}</div>`;
         } else {
             contentHtml = `
-                <div class="section-title">My Resumes</div>
+                <div class="section-title">${isFavorites ? 'Favorite Resumes' : 'My Resumes'}</div>
                 <div class="template-list">
-                    ${resumes.map(r => `
+                    ${resumes.map(r => {
+                        let parsedContent = {};
+                        try { parsedContent = JSON.parse(r.content); } catch(e) {}
+                        const displayTitle = r.title && r.title !== 'Your Name' ? r.title : (parsedContent.name || 'Untitled Resume');
+                        return `
                         <div class="template-item" data-id="${r.id}" data-href="/edit/${r.id}">
                             <div class="template-name-block">
-                                <span class="template-name">${escHtml(r.title || r.person_name || 'Untitled Resume')}</span>
-                                <span class="template-meta">
-                                    ${r.person_title ? escHtml(r.person_title) + ' · ' : ''}${escHtml(r.template_name)}
-                                    ${r.skills && r.skills.length ? ' · ' + r.skills.slice(0,3).map(escHtml).join(', ') : ''}
-                                </span>
+                                <span class="template-name">${escHtml(displayTitle)}</span>
                                 <span class="template-meta">Last edited ${formatDate(r.updated_at)}</span>
                             </div>
                             <div class="template-actions">
+                                <button class="star-btn ${r.is_favorite ? 'favorited' : ''}" data-fav="${r.id}" title="Favorite">★</button>
                                 <button class="delete-btn" data-del-resume="${r.id}" title="Delete">✕</button>
                             </div>
-                        </div>
-                    `).join('')}
+                        </div>`;
+                    }).join('')}
                 </div>
             `;
         }
@@ -136,10 +135,6 @@ function render() {
                     ${items.map(t => `
                         <div class="template-item" data-id="${t.id}" data-href="/resume/${t.id}">
                             <span class="template-name">${escHtml(t.name)}</span>
-                            <div class="template-actions">
-                                <button class="star-btn ${t.is_favorite ? 'favorited' : ''}" data-fav="${t.id}" title="Favorite">★</button>
-                                <button class="delete-btn" data-del="${t.id}" title="Delete">✕</button>
-                            </div>
                         </div>
                     `).join('')}
                 </div>
@@ -155,7 +150,7 @@ function render() {
                 <input
                     class="search-bar"
                     type="text"
-                    placeholder="${isRecent ? 'Search your resumes' : 'Search Templates'}"
+                    placeholder="${showUserResumes ? 'Search your resumes' : 'Search Templates'}"
                     id="searchInput"
                     value="${escHtml(state.search)}"
                 />
@@ -212,14 +207,6 @@ function attachEvents() {
         });
     });
 
-    // Delete template
-    document.querySelectorAll('.delete-btn[data-del]').forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.stopPropagation();
-            if (confirm('Delete this template?')) deleteTemplate(parseInt(btn.dataset.del));
-        });
-    });
-
     // Delete user resume
     document.querySelectorAll('.delete-btn[data-del-resume]').forEach(btn => {
         btn.addEventListener('click', e => {
@@ -230,4 +217,6 @@ function attachEvents() {
 }
  
 // ── Boot ──
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('tab') === 'recent') state.activeTab = 'Recent';
 loadAll();
