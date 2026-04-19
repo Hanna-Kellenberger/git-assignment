@@ -88,8 +88,7 @@ function formatDate(str) {
     return isNaN(d) ? str : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-// ── Render ──
-function render() {
+function renderContent() {
     const isRecent = state.activeTab === 'Recent';
     const isFavorites = state.activeTab === 'Favorites';
     const showUserResumes = isRecent || isFavorites;
@@ -142,8 +141,14 @@ function render() {
         }
     }
 
+    return { contentHtml, showUserResumes };
+}
+
+// ── Render ──
+function render() {
+    const { contentHtml, showUserResumes } = renderContent();
+
     root.innerHTML = `
-        <div class="topbar">Dashboard</div>
         <div class="dashboard-card">
             <div class="dash-header">
                 <img src="/static/assets/logo.svg" alt="Resumaxing" class="dash-logo" />
@@ -156,50 +161,41 @@ function render() {
                 />
                 <button class="btn-create" id="btnCreate">+ Create New Resume</button>
             </div>
- 
+
             <div class="tabs">
                 ${['Templates', 'Recent', 'Favorites'].map(tab => `
                     <div class="tab ${state.activeTab === tab ? 'active' : ''}" data-tab="${tab}">${tab}</div>
                 `).join('')}
             </div>
- 
-            <div class="dash-content">
+
+            <div class="dash-content" id="dashContent">
                 ${contentHtml}
             </div>
         </div>
     `;
- 
+
     attachEvents();
+}
+
+// Only re-render the list, keeping the input focused
+function renderListOnly() {
+    const { contentHtml } = renderContent();
+    const dashContent = document.getElementById('dashContent');
+    if (dashContent) {
+        dashContent.innerHTML = contentHtml;
+        attachListEvents();
+    }
 }
  
 // ── Events ──
-function attachEvents() {
-    document.getElementById('searchInput').addEventListener('input', e => {
-        state.search = e.target.value;
-        render();
-    });
- 
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            state.activeTab = tab.dataset.tab;
-            state.search = '';
-            render();
-        });
-    });
- 
-    document.getElementById('btnCreate').addEventListener('click', () => {
-        // Switch to Templates tab so user picks a template
-        state.activeTab = 'Templates';
-        render();
-    });
- 
+function attachListEvents() {
     document.querySelectorAll('.template-item').forEach(item => {
         item.addEventListener('click', e => {
             if (e.target.closest('.star-btn') || e.target.closest('.delete-btn')) return;
             window.location.href = item.dataset.href;
         });
     });
- 
+
     document.querySelectorAll('.star-btn').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -207,13 +203,34 @@ function attachEvents() {
         });
     });
 
-    // Delete user resume
     document.querySelectorAll('.delete-btn[data-del-resume]').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
             if (confirm('Delete this resume?')) deleteUserResume(parseInt(btn.dataset.delResume));
         });
     });
+}
+
+function attachEvents() {
+    document.getElementById('searchInput').addEventListener('input', e => {
+        state.search = e.target.value;
+        renderListOnly();
+    });
+
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            state.activeTab = tab.dataset.tab;
+            state.search = '';
+            render();
+        });
+    });
+
+    document.getElementById('btnCreate').addEventListener('click', () => {
+        state.activeTab = 'Templates';
+        render();
+    });
+
+    attachListEvents();
 }
  
 // ── Boot ──
