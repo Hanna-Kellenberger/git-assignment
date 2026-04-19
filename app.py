@@ -2,21 +2,39 @@ import os
 import json
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from dotenv import load_dotenv
-from supabase_client import supabase
+from supabase_client import db_select, db_insert, db_update, db_delete, auth_forgot_password, auth_update_password
 from templates_data import TEMPLATES, TEMPLATE_TYPE_MAP, get_default_content
+from gui.index_gui import IndexGUI
+from gui.signup_gui import SignupGUI
+from gui.login_gui import LoginGUI
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "resumaxing_secret")
 
-# ---------------------------------------------------------------------------
-# Pages
-# ---------------------------------------------------------------------------
-
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return IndexGUI().get()
+
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    gui = SignupGUI()
+    if request.method == "POST":
+        return gui.post()
+    return gui.get()
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    gui = LoginGUI()
+    if request.method == "POST":
+        return gui.post()
+    return gui.get()
+
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    return redirect(url_for("login"))
 
 @app.route("/dashboard")
 def dashboard():
@@ -24,81 +42,38 @@ def dashboard():
         return redirect(url_for("login"))
     return render_template("dashboard.html")
 
-# ---------------------------------------------------------------------------
-# Auth
-# ---------------------------------------------------------------------------
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    from gui.forgot_password_gui import ForgotPasswordGUI
+    gui = ForgotPasswordGUI()
+    if request.method == "POST":
+        return gui.post()
+    return gui.get()
 
-@app.route("/signup", methods=["GET", "POST"])
-def signup():
-    if request.method == "GET":
-        return render_template("signup.html")
-    data = request.get_json()
-    try:
-        res = supabase.auth.sign_up({
-            "email": data.get("email"),
-            "password": data.get("password")
-        })
-        if res.user:
-            session["user"] = res.user.email
-            return jsonify({"redirect": url_for("dashboard")})
-        return jsonify({"error": "Signup failed. Please try again."}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+@app.route("/reset-password", methods=["GET", "POST"])
+def reset_password():
+    from gui.reset_password_gui import ResetPasswordGUI
+    gui = ResetPasswordGUI()
+    if request.method == "POST":
+        return gui.post()
+    return gui.get()
 
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "GET":
-        return render_template("login.html")
-    data = request.get_json()
-    try:
-        res = supabase.auth.sign_in_with_password({
-            "email": data.get("email"),
-            "password": data.get("password")
-        })
-        if res.user:
-            session["user"] = res.user.email
-            return jsonify({"redirect": url_for("dashboard")})
-        return jsonify({"error": "Invalid email or password."}), 401
-    except Exception as e:
-        return jsonify({"error": "Invalid email or password."}), 401
+@app.route("/api/me")
+def me():
+    if "user" not in session:
+        return jsonify({"error": "unauthorized"}), 401
+    return jsonify({"email": session["user"]})
 
-@app.route("/logout")
-def logout():
-    supabase.auth.sign_out()
-    session.pop("user", None)
-    return redirect(url_for("login"))
-
-# ---------------------------------------------------------------------------
-# Templates API — tries Supabase first, falls back to hardcoded list
-# ---------------------------------------------------------------------------
 
 @app.route("/api/templates", methods=["GET"])
 def get_templates():
-    try:
-        result = supabase.table("templates").select("*").execute()
-        if result.data:
-            return jsonify(result.data)
-    except Exception:
-        pass
     return jsonify(TEMPLATES)
 
-# ---------------------------------------------------------------------------
-# Resume routes
-# ---------------------------------------------------------------------------
-
 def find_template(tid):
-    """Find template by id from Supabase or fallback list."""
-    try:
-        result = supabase.table("templates").select("*").eq("id", tid).execute()
-        if result.data:
-            return result.data[0]
-    except Exception:
-        pass
     return next((t for t in TEMPLATES if t["id"] == tid), None)
 
 @app.route("/resume/<int:tid>")
 def resume(tid):
-    """Always opens a fresh copy of the template — never loads saved data."""
     if "user" not in session:
         return redirect(url_for("login"))
     template = find_template(tid)
@@ -106,24 +81,18 @@ def resume(tid):
         return "Template not found", 404
     template_type = TEMPLATE_TYPE_MAP.get(template["html_file"], "modern")
     content = get_default_content(template["html_file"])
-    # id="new-{tid}" signals the JS/save route this is a new resume
     fake_resume = {"id": f"new-{tid}", "title": template["name"], "template_id": tid}
     return render_template("resume.html", resume=fake_resume, content=content, template_type=template_type)
 
 @app.route("/edit/<int:rid>")
 def edit_resume(rid):
-    """Opens a saved user resume for editing."""
     if "user" not in session:
         return redirect(url_for("login"))
     try:
-        result = supabase.table("user_resume") \
-            .select("*") \
-            .eq("id", rid) \
-            .eq("user_email", session["user"]) \
-            .execute()
-        if not result.data:
+        rows = db_select("user_resume", {"id": rid, "user_email": session["user"]})
+        if not rows:
             return "Resume not found", 404
-        row = result.data[0]
+        row = rows[0]
         content = json.loads(row["content"]) if isinstance(row["content"], str) else row["content"]
         content["_resumeTitle"] = row.get("title", "")
         template = find_template(row["template_id"])
@@ -132,21 +101,13 @@ def edit_resume(rid):
     except Exception as e:
         return str(e), 500
 
-# ---------------------------------------------------------------------------
-# User resumes API
-# ---------------------------------------------------------------------------
-
 @app.route("/api/user-resumes", methods=["GET"])
 def get_user_resumes():
     if "user" not in session:
         return jsonify({"error": "unauthorized"}), 401
     try:
-        result = supabase.table("user_resume") \
-            .select("*") \
-            .eq("user_email", session["user"]) \
-            .order("updated_at", desc=True) \
-            .execute()
-        return jsonify(result.data)
+        rows = db_select("user_resume", {"user_email": session["user"]})
+        return jsonify(rows)
     except Exception:
         return jsonify([]), 200
 
@@ -165,38 +126,35 @@ def save_resume(rid):
     }
     try:
         if str(rid).startswith("new-"):
-            # Fresh template copy — always insert a new row
-            result = supabase.table("user_resume").insert(payload).execute()
-            new_id = result.data[0]["id"] if result.data else None
+            result = db_insert("user_resume", payload)
+            new_id = result[0]["id"] if result else None
             return jsonify({"saved": True, "id": new_id})
         else:
-            # Editing existing resume — update by id
-            supabase.table("user_resume").update(payload).eq("id", int(rid)).eq("user_email", session["user"]).execute()
+            db_update("user_resume", int(rid), payload)
             return jsonify({"saved": True, "id": int(rid)})
     except Exception as e:
-        print("Save error:", e)
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api/user-resumes/<int:rid>/favorite", methods=["PATCH"])
+@app.route("/api/user-resumes/<path:rid>/favorite", methods=["PATCH"])
 def toggle_resume_favorite(rid):
     if "user" not in session:
         return jsonify({"error": "unauthorized"}), 401
     try:
-        current = supabase.table("user_resume").select("is_favorite").eq("id", rid).eq("user_email", session["user"]).execute()
-        if not current.data:
+        rows = db_select("user_resume", {"id": rid, "user_email": session["user"]})
+        if not rows:
             return jsonify({"error": "not found"}), 404
-        new_val = not current.data[0]["is_favorite"]
-        supabase.table("user_resume").update({"is_favorite": new_val}).eq("id", rid).execute()
+        new_val = not rows[0]["is_favorite"]
+        db_update("user_resume", rid, {"is_favorite": new_val})
         return jsonify({"is_favorite": new_val})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api/user-resumes/<int:rid>", methods=["DELETE"])
+@app.route("/api/user-resumes/<path:rid>", methods=["DELETE"])
 def delete_user_resume(rid):
     if "user" not in session:
         return jsonify({"error": "unauthorized"}), 401
     try:
-        supabase.table("user_resume").delete().eq("id", rid).eq("user_email", session["user"]).execute()
+        db_delete("user_resume", rid)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     return jsonify({"deleted": rid})
@@ -209,27 +167,21 @@ def suggest_skills():
     title = body.get("title", "")
     summary = body.get("summary", "")
     existing = body.get("skills", [])
-
     prompt = (
         f"You are a resume expert. Based on the following information, suggest 8-10 relevant skills "
         f"the person should add to their resume. Return ONLY a JSON array of skill strings, nothing else.\n\n"
-        f"Job Title: {title}\n"
-        f"Summary: {summary}\n"
-        f"Current Skills: {', '.join(existing) if existing else 'none'}\n\n"
+        f"Job Title: {title}\nSummary: {summary}\nCurrent Skills: {', '.join(existing) if existing else 'none'}\n\n"
         f"Respond with only a JSON array like: [\"Skill 1\", \"Skill 2\", ...]"
     )
-
     try:
         import urllib.error
         import ollama_client
-
         try:
             text = ollama_client.generate(prompt)
         except urllib.error.URLError:
             return jsonify({"error": "Ollama is not running. Start it with: ollama serve"}), 503
         except RuntimeError as e:
             return jsonify({"error": str(e)}), 503
-
         start = text.find("[")
         end = text.rfind("]") + 1
         if start == -1 or end == 0:
@@ -242,4 +194,4 @@ def suggest_skills():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=3000)
