@@ -5,6 +5,7 @@ const TEMPLATE_TYPE  = JSON.parse(document.getElementById('template-type').textC
 const initialContent = JSON.parse(document.getElementById('resume-content').textContent);
 
 let data = JSON.parse(JSON.stringify(initialContent));
+let  hasUnsavedChanges = false;
 
 let sections = {
   summary: true, experience: true, education: true,
@@ -57,6 +58,7 @@ function collectData() {
 // ── PREVIEW ──
 function updatePreview() {
   collectData();
+  hasUnsavedChanges = true;
   const p = document.getElementById('resumePaper');
   if (TEMPLATE_TYPE === 'modern') renderModern(p);
   else if (TEMPLATE_TYPE === 'professional') renderProfessional(p);
@@ -458,11 +460,21 @@ function addSkill() {
 async function suggestSkills() {
   const btn = document.getElementById('suggest-skills-btn');
   const box = document.getElementById('suggestions-box');
+
+  collectData();
+
+  const hasTitle = data.title?.trim();
+  const hasExperience = data.experience && data.experience.some(e => e.role?.trim() || e.company?.trim());
+  const hasSkills = data.skills && data.skills.length > 0;
+
+  if (!hasTitle && !hasExperience && !hasSkills) {
+    showToast('⚠ Fill in your job title, experience, or existing skills before requesting suggestions', true);
+    return;
+  }
+
   btn.textContent = '⏳ Thinking...';
   btn.disabled = true;
   box.style.display = 'none';
-
-  collectData();
 
   try {
     const res = await fetch('/api/suggest-skills', {
@@ -509,36 +521,82 @@ async function suggestSkills() {
 }
 
 // ── VALIDATION & SAVE ──
-function showToast(msg, isError) {
+function showToast(msg, isError, details) {
   const toast = document.getElementById('toast');
-  toast.textContent = msg;
+  toast.innerHTML = esc(msg) + (details && details.length > 1
+    ? `<ul style="margin-top:6px;padding-left:16px;font-size:11px;font-weight:400;">${details.slice(1).map(d => `<li>${esc(d)}</li>`).join('')}</ul>`
+    : '');
   toast.classList.toggle('error', !!isError);
   toast.classList.add('show');
-  setTimeout(() => { toast.classList.remove('show'); toast.classList.remove('error'); }, 3000);
+  setTimeout(() => { toast.classList.remove('show'); toast.classList.remove('error'); }, 5000);
 }
 
 function validateSections() {
   const errors = [];
+
+  // Personal info — always required
+  const personalFields = [
+    { id: 'f-name',  label: 'Full Name' },
+    { id: 'f-email', label: 'Email' },
+    { id: 'f-phone', label: 'Phone' },
+  ];
+  personalFields.forEach(({ id, label }) => {
+    const el = document.getElementById(id);
+    if (el && !el.value.trim()) errors.push(`${label} is empty`);
+  });
+
+  // Summary
   if (sections.summary && !data.summary?.trim())
     errors.push('Summary is checked but empty');
+
+  // Experience
   if (sections.experience) {
-    if (!data.experience || data.experience.length === 0)
+    if (!data.experience || data.experience.length === 0) {
       errors.push('Work Experience is checked but has no entries');
-    else if (data.experience.some(e => !e.role?.trim() && !e.company?.trim()))
-      errors.push('Some Work Experience entries are incomplete');
+    } else {
+      data.experience.forEach((e, i) => {
+        if (!e.role?.trim())    errors.push(`Experience #${i+1}: Job Title is empty`);
+        if (!e.company?.trim()) errors.push(`Experience #${i+1}: Company is empty`);
+        if (!e.dates?.trim())   errors.push(`Experience #${i+1}: Dates is empty`);
+      });
+    }
   }
+
+  // Education
   if (sections.education) {
-    if (!data.education || data.education.length === 0)
+    if (!data.education || data.education.length === 0) {
       errors.push('Education is checked but has no entries');
-    else if (data.education.some(e => !e.degree?.trim() && !e.school?.trim()))
-      errors.push('Some Education entries are incomplete');
+    } else {
+      data.education.forEach((e, i) => {
+        if (!e.degree?.trim()) errors.push(`Education #${i+1}: Degree is empty`);
+        if (!e.school?.trim()) errors.push(`Education #${i+1}: School is empty`);
+        if (!e.dates?.trim())  errors.push(`Education #${i+1}: Dates is empty`);
+      });
+    }
   }
+
+  // Skills
   if (sections.skills && (!data.skills || data.skills.length === 0))
     errors.push('Skills is checked but no skills added');
-  if (sections.projects && TEMPLATE_TYPE === 'university' && (!data.projects || data.projects.length === 0))
-    errors.push('Projects is checked but has no entries');
-  if (sections.certifications && TEMPLATE_TYPE === 'professional' && (!data.certifications || data.certifications.length === 0))
-    errors.push('Certifications is checked but has no entries');
+
+  // Projects (university)
+  if (sections.projects && TEMPLATE_TYPE === 'university') {
+    if (!data.projects || data.projects.length === 0) {
+      errors.push('Projects is checked but has no entries');
+    } else {
+      data.projects.forEach((p, i) => {
+        if (!p.name?.trim())        errors.push(`Project #${i+1}: Name is empty`);
+        if (!p.description?.trim()) errors.push(`Project #${i+1}: Description is empty`);
+      });
+    }
+  }
+
+  // Certifications (professional)
+  if (sections.certifications && TEMPLATE_TYPE === 'professional') {
+    if (!data.certifications || data.certifications.length === 0)
+      errors.push('Certifications is checked but has no entries');
+  }
+
   return errors;
 }
 
@@ -546,7 +604,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
   collectData();
   const errors = validateSections();
   if (errors.length > 0) {
-    showToast('⚠ ' + errors[0] + ' — fill it in or uncheck it', true);
+    showToast(`⚠ ${errors.length} issue${errors.length > 1 ? 's' : ''}: ${errors[0]}`, true, errors);
     return;
   }
   const title = document.getElementById('resume-title').value.trim() || data.name || 'My Resume';
@@ -560,6 +618,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
     const json = await res.json();
     if (json.saved) {
       if (json.id) window.RESUME_ID = json.id;
+      hasUnsavedChanges = false;
       showToast('Saved! Redirecting...');
       setTimeout(() => { window.location.href = '/dashboard?tab=recent'; }, 900);
     } else {
@@ -571,8 +630,43 @@ document.getElementById('btnSave').addEventListener('click', async () => {
   }
 });
 
+function confirmExit(){
+  if(hasUnsavedChanges){
+    const msg = 'You have unsaved changes. Are you sure you want to leave?';
+    if(!confirm(msg)){
+      return false;
+    }
+    return confirm(msg);
+  }
+  return true;
+}
+
+const backBtn = document.querySelector('.back-link');
+if(backBtn) {
+  backBtn.addEventListener('click', e => {
+  if(hasUnsavedChanges) {
+    e.preventDefault();
+    if(confirm('Do you want to save changes?')) {
+      document.getElementById('btnSave').click();
+    } else {
+      data = JSON.parse(JSON.stringify(initialContent));
+      hasUnsavedChanges = false;
+      window.location.href = '/dashboard?tab=recent';
+    }
+  }
+ });
+}
+
+window.addEventListener('beforeunload', (e) => {
+  if(hasUnsavedChanges) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
 // ── BOOT ──
 buildLeftPanel();
 updatePreview();
+hasUnsavedChanges = false;
 const titleEl = document.getElementById('resume-title');
 if (titleEl) titleEl.value = initialContent._resumeTitle || '';
