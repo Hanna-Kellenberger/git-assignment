@@ -2,7 +2,7 @@ import os
 import json
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from dotenv import load_dotenv
-from supabase_client import db_select, db_insert, auth_signup, auth_login, auth_forgot_password, auth_update_password
+from supabase_client import db_select, db_insert, db_update, db_delete, auth_forgot_password, auth_update_password
 from templates_data import TEMPLATES, TEMPLATE_TYPE_MAP, get_default_content
 from gui.index_gui import IndexGUI
 from gui.signup_gui import SignupGUI
@@ -123,13 +123,12 @@ def save_resume(rid):
             new_id = result[0]["id"] if result else None
             return jsonify({"saved": True, "id": new_id})
         else:
-            from supabase_client import db_update
             db_update("user_resume", int(rid), payload)
             return jsonify({"saved": True, "id": int(rid)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api/user-resumes/<int:rid>/favorite", methods=["PATCH"])
+@app.route("/api/user-resumes/<path:rid>/favorite", methods=["PATCH"])
 def toggle_resume_favorite(rid):
     if "user" not in session:
         return jsonify({"error": "unauthorized"}), 401
@@ -138,18 +137,16 @@ def toggle_resume_favorite(rid):
         if not rows:
             return jsonify({"error": "not found"}), 404
         new_val = not rows[0]["is_favorite"]
-        from supabase_client import db_update
         db_update("user_resume", rid, {"is_favorite": new_val})
         return jsonify({"is_favorite": new_val})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api/user-resumes/<int:rid>", methods=["DELETE"])
+@app.route("/api/user-resumes/<path:rid>", methods=["DELETE"])
 def delete_user_resume(rid):
     if "user" not in session:
         return jsonify({"error": "unauthorized"}), 401
     try:
-        from supabase_client import db_delete
         db_delete("user_resume", rid)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

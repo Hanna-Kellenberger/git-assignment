@@ -35,7 +35,7 @@ async function loadAll() {
 }
 
 async function toggleFavorite(id) {
-    const resume = state.userResumes.find(r => r.id === id);
+    const resume = state.userResumes.find(r => String(r.id) === String(id));
     if (!resume) return;
     await fetch(`/api/user-resumes/${id}/favorite`, { method: 'PATCH', credentials: 'same-origin' });
     await fetchUserResumes();
@@ -199,14 +199,14 @@ function attachListEvents() {
     document.querySelectorAll('.star-btn').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
-            toggleFavorite(parseInt(btn.dataset.fav));
+            toggleFavorite(btn.dataset.fav);
         });
     });
 
     document.querySelectorAll('.delete-btn[data-del-resume]').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
-            if (confirm('Delete this resume?')) deleteUserResume(parseInt(btn.dataset.delResume));
+            if (confirm('Delete this resume?')) deleteUserResume(btn.dataset.delResume);
         });
     });
 }
