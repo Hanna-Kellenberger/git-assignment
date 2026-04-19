@@ -3,51 +3,12 @@ import json
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from dotenv import load_dotenv
 from supabase_client import supabase
+from templates_data import TEMPLATES, TEMPLATE_TYPE_MAP, get_default_content
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "resumaxing_secret")
-
-# ---------------------------------------------------------------------------
-# Hardcoded templates (no DB needed)
-# ---------------------------------------------------------------------------
-
-TEMPLATES = [
-    {"id": 1, "name": "Modern Resume",       "html_file": "modern_resume.html",       "category": "Resume Template", "is_favorite": True},
-    {"id": 2, "name": "Professional Resume", "html_file": "professional_resume.html", "category": "Resume Template", "is_favorite": False},
-    {"id": 3, "name": "University Resume",   "html_file": "university_resume.html",   "category": "Resume Template", "is_favorite": False},
-]
-
-DEFAULT_CONTENT = {
-    "modern_resume.html": {
-        "name": "Your Name", "title": "Professional Title",
-        "email": "email@example.com", "phone": "(555) 000-0000",
-        "location": "City, State", "linkedin": "linkedin.com/in/yourname",
-        "summary": "A motivated professional with experience in...",
-        "experience": [{"role": "Job Title", "company": "Company Name", "dates": "Jan 2022 – Present", "bullets": ["Led key initiatives", "Improved processes by 20%"]}],
-        "education": [{"degree": "B.S. in Your Major", "school": "University Name", "dates": "2018 – 2022"}],
-        "skills": ["Skill 1", "Skill 2", "Skill 3", "Skill 4"]
-    },
-    "professional_resume.html": {
-        "name": "Your Name", "title": "Senior Professional",
-        "email": "email@example.com", "phone": "(555) 000-0000",
-        "location": "City, State", "linkedin": "yourwebsite.com",
-        "summary": "Results-driven professional with 5+ years of experience...",
-        "experience": [{"role": "Senior Role", "company": "Company Name", "dates": "2020 – Present", "bullets": ["Managed a team of 10", "Delivered projects on time"]}],
-        "education": [{"degree": "M.S. in Your Field", "school": "University Name", "dates": "2016 – 2018"}],
-        "skills": ["Leadership", "Strategy", "Communication", "Analysis"]
-    },
-    "university_resume.html": {
-        "name": "Your Name", "title": "Computer Science Student",
-        "email": "email@university.edu", "phone": "(555) 000-0000",
-        "location": "City, State", "linkedin": "linkedin.com/in/yourname",
-        "summary": "Motivated student seeking internship opportunities...",
-        "experience": [{"role": "Intern", "company": "Company / Lab", "dates": "Summer 2024", "bullets": ["Assisted with research", "Built a web application"]}],
-        "education": [{"degree": "B.S. Computer Science", "school": "University Name", "dates": "2021 – 2025"}],
-        "skills": ["Python", "JavaScript", "SQL", "Git"]
-    }
-}
 
 # ---------------------------------------------------------------------------
 # Pages
@@ -108,71 +69,177 @@ def logout():
     return redirect(url_for("login"))
 
 # ---------------------------------------------------------------------------
-# Templates API
+# Templates API — tries Supabase first, falls back to hardcoded list
 # ---------------------------------------------------------------------------
 
 @app.route("/api/templates", methods=["GET"])
 def get_templates():
+    try:
+        result = supabase.table("templates").select("*").execute()
+        if result.data:
+            return jsonify(result.data)
+    except Exception:
+        pass
     return jsonify(TEMPLATES)
 
 # ---------------------------------------------------------------------------
 # Resume routes
 # ---------------------------------------------------------------------------
 
-@app.route("/resume/<int:tid>")
-def resume(tid):
-    if "user" not in session:
-        return redirect(url_for("login"))
-    template = next((t for t in TEMPLATES if t["id"] == tid), None)
-    if not template:
-        return "Template not found", 404
-
-    # Look for existing user resume in Supabase
+def find_template(tid):
+    """Find template by id from Supabase or fallback list."""
     try:
-        result = supabase.table("user_resumes") \
-            .select("*") \
-            .eq("user_email", session["user"]) \
-            .eq("template_id", tid) \
-            .order("created_at", desc=True) \
-            .limit(1) \
-            .execute()
+        result = supabase.table("templates").select("*").eq("id", tid).execute()
         if result.data:
-            row = result.data[0]
-            content = json.loads(row["content"]) if isinstance(row["content"], str) else row["content"]
-            return render_template("resume.html", resume=row, content=content)
+            return result.data[0]
     except Exception:
         pass
+    return next((t for t in TEMPLATES if t["id"] == tid), None)
 
-    # No existing resume — use default content
-    content = DEFAULT_CONTENT.get(template["html_file"], DEFAULT_CONTENT["modern_resume.html"])
-    fake_resume = {"id": f"new-{tid}", "title": template["name"]}
-    return render_template("resume.html", resume=fake_resume, content=content)
+@app.route("/resume/<int:tid>")
+def resume(tid):
+    """Always opens a fresh copy of the template — never loads saved data."""
+    if "user" not in session:
+        return redirect(url_for("login"))
+    template = find_template(tid)
+    if not template:
+        return "Template not found", 404
+    template_type = TEMPLATE_TYPE_MAP.get(template["html_file"], "modern")
+    content = get_default_content(template["html_file"])
+    # id="new-{tid}" signals the JS/save route this is a new resume
+    fake_resume = {"id": f"new-{tid}", "title": template["name"], "template_id": tid}
+    return render_template("resume.html", resume=fake_resume, content=content, template_type=template_type)
+
+@app.route("/edit/<int:rid>")
+def edit_resume(rid):
+    """Opens a saved user resume for editing."""
+    if "user" not in session:
+        return redirect(url_for("login"))
+    try:
+        result = supabase.table("user_resume") \
+            .select("*") \
+            .eq("id", rid) \
+            .eq("user_email", session["user"]) \
+            .execute()
+        if not result.data:
+            return "Resume not found", 404
+        row = result.data[0]
+        content = json.loads(row["content"]) if isinstance(row["content"], str) else row["content"]
+        content["_resumeTitle"] = row.get("title", "")
+        template = find_template(row["template_id"])
+        template_type = TEMPLATE_TYPE_MAP.get(template["html_file"], "modern") if template else "modern"
+        return render_template("resume.html", resume=row, content=content, template_type=template_type)
+    except Exception as e:
+        return str(e), 500
+
+# ---------------------------------------------------------------------------
+# User resumes API
+# ---------------------------------------------------------------------------
 
 @app.route("/api/user-resumes", methods=["GET"])
 def get_user_resumes():
     if "user" not in session:
         return jsonify({"error": "unauthorized"}), 401
     try:
-        result = supabase.table("user_resumes").select("*").eq("user_email", session["user"]).execute()
+        result = supabase.table("user_resume") \
+            .select("*") \
+            .eq("user_email", session["user"]) \
+            .order("updated_at", desc=True) \
+            .execute()
         return jsonify(result.data)
     except Exception:
         return jsonify([]), 200
 
-@app.route("/api/resumes/<rid>", methods=["POST"])
+@app.route("/api/resumes/<path:rid>", methods=["POST"])
 def save_resume(rid):
     if "user" not in session:
         return jsonify({"error": "unauthorized"}), 401
     data = request.get_json()
+    from datetime import datetime, timezone
+    payload = {
+        "user_email": session["user"],
+        "template_id": data.get("template_id"),
+        "title": data.get("title", "My Resume"),
+        "content": json.dumps(data["content"]),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
     try:
-        supabase.table("user_resumes").upsert({
-            "user_email": session["user"],
-            "template_id": data.get("template_id"),
-            "title": data.get("title", "My Resume"),
-            "content": json.dumps(data["content"])
-        }).execute()
-    except Exception:
-        pass
-    return jsonify({"saved": True})
+        if str(rid).startswith("new-"):
+            # Fresh template copy — always insert a new row
+            result = supabase.table("user_resume").insert(payload).execute()
+            new_id = result.data[0]["id"] if result.data else None
+            return jsonify({"saved": True, "id": new_id})
+        else:
+            # Editing existing resume — update by id
+            supabase.table("user_resume").update(payload).eq("id", int(rid)).eq("user_email", session["user"]).execute()
+            return jsonify({"saved": True, "id": int(rid)})
+    except Exception as e:
+        print("Save error:", e)
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/user-resumes/<int:rid>/favorite", methods=["PATCH"])
+def toggle_resume_favorite(rid):
+    if "user" not in session:
+        return jsonify({"error": "unauthorized"}), 401
+    try:
+        current = supabase.table("user_resume").select("is_favorite").eq("id", rid).eq("user_email", session["user"]).execute()
+        if not current.data:
+            return jsonify({"error": "not found"}), 404
+        new_val = not current.data[0]["is_favorite"]
+        supabase.table("user_resume").update({"is_favorite": new_val}).eq("id", rid).execute()
+        return jsonify({"is_favorite": new_val})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/user-resumes/<int:rid>", methods=["DELETE"])
+def delete_user_resume(rid):
+    if "user" not in session:
+        return jsonify({"error": "unauthorized"}), 401
+    try:
+        supabase.table("user_resume").delete().eq("id", rid).eq("user_email", session["user"]).execute()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    return jsonify({"deleted": rid})
+
+@app.route("/api/suggest-skills", methods=["POST"])
+def suggest_skills():
+    if "user" not in session:
+        return jsonify({"error": "unauthorized"}), 401
+    body = request.get_json()
+    title = body.get("title", "")
+    summary = body.get("summary", "")
+    existing = body.get("skills", [])
+
+    prompt = (
+        f"You are a resume expert. Based on the following information, suggest 8-10 relevant skills "
+        f"the person should add to their resume. Return ONLY a JSON array of skill strings, nothing else.\n\n"
+        f"Job Title: {title}\n"
+        f"Summary: {summary}\n"
+        f"Current Skills: {', '.join(existing) if existing else 'none'}\n\n"
+        f"Respond with only a JSON array like: [\"Skill 1\", \"Skill 2\", ...]"
+    )
+
+    try:
+        import urllib.error
+        import ollama_client
+
+        try:
+            text = ollama_client.generate(prompt)
+        except urllib.error.URLError:
+            return jsonify({"error": "Ollama is not running. Start it with: ollama serve"}), 503
+        except RuntimeError as e:
+            return jsonify({"error": str(e)}), 503
+
+        start = text.find("[")
+        end = text.rfind("]") + 1
+        if start == -1 or end == 0:
+            return jsonify({"error": "No suggestions returned"}), 500
+        suggestions = json.loads(text[start:end])
+        existing_lower = [s.lower() for s in existing]
+        suggestions = [s for s in suggestions if s.lower() not in existing_lower]
+        return jsonify({"suggestions": suggestions})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
