@@ -458,11 +458,21 @@ function addSkill() {
 async function suggestSkills() {
   const btn = document.getElementById('suggest-skills-btn');
   const box = document.getElementById('suggestions-box');
+
+  collectData();
+
+  const hasTitle = data.title?.trim();
+  const hasExperience = data.experience && data.experience.some(e => e.role?.trim() || e.company?.trim());
+  const hasSkills = data.skills && data.skills.length > 0;
+
+  if (!hasTitle && !hasExperience && !hasSkills) {
+    showToast('⚠ Fill in your job title, experience, or existing skills before requesting suggestions', true);
+    return;
+  }
+
   btn.textContent = '⏳ Thinking...';
   btn.disabled = true;
   box.style.display = 'none';
-
-  collectData();
 
   try {
     const res = await fetch('/api/suggest-skills', {
@@ -524,10 +534,9 @@ function validateSections() {
 
   // Personal info — always required
   const personalFields = [
-    { id: 'f-name',     label: 'Full Name' },
-    { id: 'f-email',    label: 'Email' },
-    { id: 'f-phone',    label: 'Phone' },
-    { id: 'f-location', label: 'Location' },
+    { id: 'f-name',  label: 'Full Name' },
+    { id: 'f-email', label: 'Email' },
+    { id: 'f-phone', label: 'Phone' },
   ];
   personalFields.forEach(({ id, label }) => {
     const el = document.getElementById(id);
