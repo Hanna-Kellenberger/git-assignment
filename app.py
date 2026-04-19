@@ -58,6 +58,13 @@ def reset_password():
         return gui.post()
     return gui.get()
 
+@app.route("/api/me")
+def me():
+    if "user" not in session:
+        return jsonify({"error": "unauthorized"}), 401
+    return jsonify({"email": session["user"]})
+
+
 @app.route("/api/templates", methods=["GET"])
 def get_templates():
     return jsonify(TEMPLATES)

@@ -50,7 +50,7 @@ def db_select(table, filters=None):
     url = f"{SUPABASE_URL}/rest/v1/{table}?select=*"
     if filters:
         for k, v in filters.items():
-            url += f"&{k}=eq.{v}"
+            url += f"&{k}=eq.{requests.utils.quote(str(v), safe='')}"
     res = requests.get(url, headers=HEADERS)
     return res.json()
 
@@ -64,7 +64,7 @@ def db_insert(table, data):
 
 def db_update(table, row_id, data):
     res = requests.patch(
-        f"{SUPABASE_URL}/rest/v1/{table}?id=eq.{row_id}",
+        f"{SUPABASE_URL}/rest/v1/{table}?id=eq.{requests.utils.quote(str(row_id), safe='')}",
         json=data,
         headers={**HEADERS, "Prefer": "return=representation"}
     )
@@ -72,7 +72,7 @@ def db_update(table, row_id, data):
 
 def db_delete(table, row_id):
     res = requests.delete(
-        f"{SUPABASE_URL}/rest/v1/{table}?id=eq.{row_id}",
+        f"{SUPABASE_URL}/rest/v1/{table}?id=eq.{requests.utils.quote(str(row_id), safe='')}",
         headers=HEADERS
     )
     return res.status_code

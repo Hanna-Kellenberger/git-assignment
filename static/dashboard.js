@@ -3,7 +3,9 @@ let state = {
     templates: [],
     userResumes: [],
     activeTab: 'Templates',
-    search: ''
+    search: '',
+    userEmail: '',
+    showAccountMenu: false
 };
 
 const root = document.getElementById('root');
@@ -30,8 +32,18 @@ async function fetchUserResumes() {
 }
 
 async function loadAll() {
-    await Promise.all([fetchTemplates(), fetchUserResumes()]);
+    await Promise.all([fetchTemplates(), fetchUserResumes(), fetchUser()]);
     render();
+}
+
+async function fetchUser() {
+    try {
+        const res = await fetch('/api/me', { credentials: 'same-origin' });
+        const data = await res.json();
+        state.userEmail = data.email || '';
+    } catch (e) {
+        state.userEmail = '';
+    }
 }
 
 async function toggleFavorite(id) {
@@ -160,6 +172,20 @@ function render() {
                     value="${escHtml(state.search)}"
                 />
                 <button class="btn-create" id="btnCreate">+ Create New Resume</button>
+                <div class="account-wrap">
+                    <button class="account-btn" id="accountBtn" title="Account">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="8" r="4"/>
+                            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                        </svg>
+                    </button>
+                    ${state.showAccountMenu ? `
+                    <div class="account-menu" id="accountMenu">
+                        <div class="account-email">${escHtml(state.userEmail)}</div>
+                        <hr class="account-divider"/>
+                        <a href="/logout" class="account-logout">Log out</a>
+                    </div>` : ''}
+                </div>
             </div>
 
             <div class="tabs">
@@ -229,6 +255,19 @@ function attachEvents() {
         state.activeTab = 'Templates';
         render();
     });
+
+    document.getElementById('accountBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        state.showAccountMenu = !state.showAccountMenu;
+        render();
+    });
+
+    document.addEventListener('click', () => {
+        if (state.showAccountMenu) {
+            state.showAccountMenu = false;
+            render();
+        }
+    }, { once: true });
 
     attachListEvents();
 }
