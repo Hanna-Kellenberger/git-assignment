@@ -509,36 +509,83 @@ async function suggestSkills() {
 }
 
 // ── VALIDATION & SAVE ──
-function showToast(msg, isError) {
+function showToast(msg, isError, details) {
   const toast = document.getElementById('toast');
-  toast.textContent = msg;
+  toast.innerHTML = esc(msg) + (details && details.length > 1
+    ? `<ul style="margin-top:6px;padding-left:16px;font-size:11px;font-weight:400;">${details.slice(1).map(d => `<li>${esc(d)}</li>`).join('')}</ul>`
+    : '');
   toast.classList.toggle('error', !!isError);
   toast.classList.add('show');
-  setTimeout(() => { toast.classList.remove('show'); toast.classList.remove('error'); }, 3000);
+  setTimeout(() => { toast.classList.remove('show'); toast.classList.remove('error'); }, 5000);
 }
 
 function validateSections() {
   const errors = [];
+
+  // Personal info — always required
+  const personalFields = [
+    { id: 'f-name',     label: 'Full Name' },
+    { id: 'f-email',    label: 'Email' },
+    { id: 'f-phone',    label: 'Phone' },
+    { id: 'f-location', label: 'Location' },
+  ];
+  personalFields.forEach(({ id, label }) => {
+    const el = document.getElementById(id);
+    if (el && !el.value.trim()) errors.push(`${label} is empty`);
+  });
+
+  // Summary
   if (sections.summary && !data.summary?.trim())
     errors.push('Summary is checked but empty');
+
+  // Experience
   if (sections.experience) {
-    if (!data.experience || data.experience.length === 0)
+    if (!data.experience || data.experience.length === 0) {
       errors.push('Work Experience is checked but has no entries');
-    else if (data.experience.some(e => !e.role?.trim() && !e.company?.trim()))
-      errors.push('Some Work Experience entries are incomplete');
+    } else {
+      data.experience.forEach((e, i) => {
+        if (!e.role?.trim())    errors.push(`Experience #${i+1}: Job Title is empty`);
+        if (!e.company?.trim()) errors.push(`Experience #${i+1}: Company is empty`);
+        if (!e.dates?.trim())   errors.push(`Experience #${i+1}: Dates is empty`);
+      });
+    }
   }
+
+  // Education
   if (sections.education) {
-    if (!data.education || data.education.length === 0)
+    if (!data.education || data.education.length === 0) {
       errors.push('Education is checked but has no entries');
-    else if (data.education.some(e => !e.degree?.trim() && !e.school?.trim()))
-      errors.push('Some Education entries are incomplete');
+    } else {
+      data.education.forEach((e, i) => {
+        if (!e.degree?.trim()) errors.push(`Education #${i+1}: Degree is empty`);
+        if (!e.school?.trim()) errors.push(`Education #${i+1}: School is empty`);
+        if (!e.dates?.trim())  errors.push(`Education #${i+1}: Dates is empty`);
+      });
+    }
   }
+
+  // Skills
   if (sections.skills && (!data.skills || data.skills.length === 0))
     errors.push('Skills is checked but no skills added');
-  if (sections.projects && TEMPLATE_TYPE === 'university' && (!data.projects || data.projects.length === 0))
-    errors.push('Projects is checked but has no entries');
-  if (sections.certifications && TEMPLATE_TYPE === 'professional' && (!data.certifications || data.certifications.length === 0))
-    errors.push('Certifications is checked but has no entries');
+
+  // Projects (university)
+  if (sections.projects && TEMPLATE_TYPE === 'university') {
+    if (!data.projects || data.projects.length === 0) {
+      errors.push('Projects is checked but has no entries');
+    } else {
+      data.projects.forEach((p, i) => {
+        if (!p.name?.trim())        errors.push(`Project #${i+1}: Name is empty`);
+        if (!p.description?.trim()) errors.push(`Project #${i+1}: Description is empty`);
+      });
+    }
+  }
+
+  // Certifications (professional)
+  if (sections.certifications && TEMPLATE_TYPE === 'professional') {
+    if (!data.certifications || data.certifications.length === 0)
+      errors.push('Certifications is checked but has no entries');
+  }
+
   return errors;
 }
 
@@ -546,7 +593,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
   collectData();
   const errors = validateSections();
   if (errors.length > 0) {
-    showToast('⚠ ' + errors[0] + ' — fill it in or uncheck it', true);
+    showToast(`⚠ ${errors.length} issue${errors.length > 1 ? 's' : ''}: ${errors[0]}`, true, errors);
     return;
   }
   const title = document.getElementById('resume-title').value.trim() || data.name || 'My Resume';
