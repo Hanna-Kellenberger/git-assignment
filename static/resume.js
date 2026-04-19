@@ -5,7 +5,7 @@ const TEMPLATE_TYPE  = JSON.parse(document.getElementById('template-type').textC
 const initialContent = JSON.parse(document.getElementById('resume-content').textContent);
 
 let data = JSON.parse(JSON.stringify(initialContent));
-let  hasUnsavedChanges = false;
+let hasUnsavedChanges = false;
 
 let sections = {
   summary: true, experience: true, education: true,
@@ -600,6 +600,406 @@ function validateSections() {
   return errors;
 }
 
+function slugifyFilename(s) {
+  return String(s || 'resume')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'resume';
+}
+
+function triggerFileDownload(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  triggerBlobDownload(filename, blob);
+}
+
+function triggerBlobDownload(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function buildResumeText() {
+  const lines = [];
+  const addLine = (line = '') => lines.push(line);
+
+  addLine(data.name || 'Your Name');
+  if (data.title) addLine(data.title);
+  const contactLine = [data.email, data.phone, data.location, data.linkedin].filter(Boolean).join(' | ');
+  if (contactLine) addLine(contactLine);
+  addLine('');
+
+  if (data.summary) {
+    addLine('SUMMARY');
+    addLine(data.summary);
+    addLine('');
+  }
+
+  if (Array.isArray(data.experience) && data.experience.length) {
+    addLine('EXPERIENCE');
+    data.experience.forEach((e) => {
+      const header = [e.role, e.company, e.dates].filter(Boolean).join(' | ');
+      if (header) addLine(header);
+      (e.bullets || []).forEach((b) => addLine('- ' + b));
+      addLine('');
+    });
+  }
+
+  if (Array.isArray(data.education) && data.education.length) {
+    addLine('EDUCATION');
+    data.education.forEach((e) => {
+      addLine([e.degree, e.school, e.dates].filter(Boolean).join(' | '));
+    });
+    if (data.gpa) addLine('GPA: ' + data.gpa);
+    addLine('');
+  }
+
+  if (Array.isArray(data.projects) && data.projects.length) {
+    addLine('PROJECTS');
+    data.projects.forEach((p) => {
+      if (p.name) addLine(p.name);
+      if (p.description) addLine(p.description);
+      addLine('');
+    });
+  }
+
+  if (Array.isArray(data.skills) && data.skills.length) {
+    addLine('SKILLS');
+    addLine(data.skills.join(', '));
+    addLine('');
+  }
+
+  if (Array.isArray(data.certifications) && data.certifications.length) {
+    addLine('CERTIFICATIONS');
+    data.certifications.forEach((c) => addLine('- ' + c));
+  }
+
+  return lines.join('\n').trim() + '\n';
+}
+
+function buildResumeMarkdown() {
+  const lines = [];
+  const add = (line = '') => lines.push(line);
+
+  add(`# ${data.name || 'Your Name'}`);
+  if (data.title) add(`_${data.title}_`);
+  const contactLine = [data.email, data.phone, data.location, data.linkedin].filter(Boolean).join(' | ');
+  if (contactLine) add(contactLine);
+  add();
+
+  if (data.summary) {
+    add('## Summary');
+    add(data.summary);
+    add();
+  }
+
+  if (Array.isArray(data.experience) && data.experience.length) {
+    add('## Experience');
+    data.experience.forEach((e) => {
+      const header = [e.role, e.company].filter(Boolean).join(' - ');
+      if (header) add(`### ${header}`);
+      if (e.dates) add(`_${e.dates}_`);
+      (e.bullets || []).forEach((b) => add(`- ${b}`));
+      add();
+    });
+  }
+
+  if (Array.isArray(data.education) && data.education.length) {
+    add('## Education');
+    data.education.forEach((e) => {
+      const row = [e.degree, e.school].filter(Boolean).join(' - ');
+      if (row) add(`- **${row}**${e.dates ? ` (${e.dates})` : ''}`);
+    });
+    if (data.gpa) add(`- GPA: ${data.gpa}`);
+    add();
+  }
+
+  if (Array.isArray(data.projects) && data.projects.length) {
+    add('## Projects');
+    data.projects.forEach((p) => {
+      if (p.name) add(`### ${p.name}`);
+      if (p.description) add(p.description);
+      add();
+    });
+  }
+
+  if (Array.isArray(data.skills) && data.skills.length) {
+    add('## Skills');
+    add(data.skills.join(', '));
+    add();
+  }
+
+  if (Array.isArray(data.certifications) && data.certifications.length) {
+    add('## Certifications');
+    data.certifications.forEach((c) => add(`- ${c}`));
+  }
+
+  return lines.join('\n').trim() + '\n';
+}
+
+async function getResumeCssForExport() {
+  try {
+    const res = await fetch('/static/resume.css', { credentials: 'same-origin' });
+    if (res.ok) return await res.text();
+  } catch (e) {
+    // Fall back to minimal CSS below if stylesheet fetch fails.
+  }
+  return `
+    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 24px; }
+    .resume-paper { width: 100%; min-height: auto; box-shadow: none; }
+  `;
+}
+
+async function buildDocxHtml() {
+  const resumePaper = document.getElementById('resumePaper');
+  const fallback = `<pre>${esc(buildResumeText())}</pre>`;
+  const bodyContent = resumePaper ? resumePaper.outerHTML : fallback;
+  const exportCss = await getResumeCssForExport();
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${esc(data.name || 'Resume')}</title>
+  <style>
+    ${exportCss}
+    body { margin: 24px !important; background: #fff !important; }
+    .right-panel, .left-panel, .topbar, .toast { display: none !important; }
+    .resume-paper { width: 100% !important; min-height: auto !important; box-shadow: none !important; }
+  </style>
+</head>
+<body>${bodyContent}</body>
+</html>`;
+}
+
+async function downloadResume(format) {
+  collectData();
+  const baseName = slugifyFilename(document.getElementById('resume-title')?.value || data.name || 'resume');
+  const resumePaper = document.getElementById('resumePaper');
+
+  if (format === 'pdf') {
+    if (!resumePaper) {
+      showToast('Resume preview is unavailable', true);
+      return;
+    }
+    if (typeof window.html2pdf !== 'function') {
+      showToast('PDF export is unavailable right now', true);
+      return;
+    }
+
+    const options = {
+      margin: [10, 10, 10, 10],
+      filename: `${baseName}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] }
+    };
+
+    await window.html2pdf().set(options).from(resumePaper).save();
+    showToast('Downloading PDF');
+    return;
+  }
+
+  if (format === 'txt') {
+    triggerFileDownload(`${baseName}.txt`, buildResumeText(), 'text/plain;charset=utf-8');
+    showToast('Downloading TXT');
+    return;
+  }
+
+  if (format === 'md') {
+    triggerFileDownload(`${baseName}.md`, buildResumeMarkdown(), 'text/markdown;charset=utf-8');
+    showToast('Downloading MD');
+    return;
+  }
+
+  if (format === 'docx') {
+    if (!window.htmlDocx || typeof window.htmlDocx.asBlob !== 'function') {
+      showToast('DOCX export is unavailable right now', true);
+      return;
+    }
+    const docxBlob = window.htmlDocx.asBlob(await buildDocxHtml());
+    triggerBlobDownload(`${baseName}.docx`, docxBlob);
+    showToast('Downloading DOCX');
+    return;
+  }
+
+  if (format === 'json') {
+    triggerFileDownload(`${baseName}.json`, JSON.stringify(data, null, 2), 'application/json;charset=utf-8');
+    showToast('Downloading JSON');
+    return;
+  }
+
+  showToast('Unsupported download format', true);
+}
+
+async function shareResume() {
+  const shareTitle = document.getElementById('resume-title')?.value?.trim() || 'Resume';
+  const shareUrl = window.location.href;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: shareTitle,
+        text: 'Check out my resume',
+        url: shareUrl
+      });
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    showToast('Share link copied to clipboard');
+  } catch (e) {
+    showToast('Could not copy link. URL: ' + shareUrl, true);
+  }
+}
+
+function buildShareLink() {
+  return window.location.href;
+}
+
+function buildEmbedCode() {
+  const shareUrl = buildShareLink();
+  const title = document.getElementById('resume-title')?.value?.trim() || 'Resume';
+  return `<iframe src="${shareUrl}" title="${esc(title)}" style="width:100%;height:900px;border:0;" loading="lazy"></iframe>`;
+}
+
+function openMailClient() {
+  const title = document.getElementById('resume-title')?.value?.trim() || 'Resume';
+  const shareUrl = buildShareLink();
+  const subject = encodeURIComponent(`Resume: ${title}`);
+  const body = encodeURIComponent(`Hi,\n\nSharing my resume with you: ${shareUrl}\n\nBest,`);
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+}
+
+async function copyShareLink() {
+  const shareUrl = buildShareLink();
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    showToast('Share link copied to clipboard');
+  } catch (e) {
+    showToast('Could not copy link. URL: ' + shareUrl, true);
+  }
+}
+
+async function copyEmbedCode() {
+  const embedCode = buildEmbedCode();
+  try {
+    await navigator.clipboard.writeText(embedCode);
+    showToast('Embed code copied to clipboard');
+  } catch (e) {
+    showToast('Could not copy embed code', true);
+  }
+}
+
+function setupMenuDropdown() {
+  const menuBtn = document.getElementById('btnMenu');
+  const dropdown = document.getElementById('menuDropdown');
+  const downloadToggle = dropdown?.querySelector('[data-menu-action="download"]');
+  const downloadSubmenu = document.getElementById('downloadSubmenu');
+  const shareToggle = dropdown?.querySelector('[data-menu-action="share"]');
+  const shareSubmenu = document.getElementById('shareSubmenu');
+  if (!menuBtn || !dropdown) return;
+
+  const setMenuOpen = (open) => {
+    dropdown.classList.toggle('open', open);
+    menuBtn.setAttribute('aria-expanded', String(open));
+    dropdown.setAttribute('aria-hidden', String(!open));
+    if (!open && downloadSubmenu && downloadToggle) {
+      downloadSubmenu.classList.remove('open');
+      downloadSubmenu.setAttribute('aria-hidden', 'true');
+      downloadToggle.setAttribute('aria-expanded', 'false');
+    }
+    if (!open && shareSubmenu && shareToggle) {
+      shareSubmenu.classList.remove('open');
+      shareSubmenu.setAttribute('aria-hidden', 'true');
+      shareToggle.setAttribute('aria-expanded', 'false');
+    }
+  };
+
+  const setDownloadSubmenuOpen = (open) => {
+    if (!downloadSubmenu || !downloadToggle) return;
+    downloadSubmenu.classList.toggle('open', open);
+    downloadSubmenu.setAttribute('aria-hidden', String(!open));
+    downloadToggle.setAttribute('aria-expanded', String(open));
+  };
+
+  const setShareSubmenuOpen = (open) => {
+    if (!shareSubmenu || !shareToggle) return;
+    shareSubmenu.classList.toggle('open', open);
+    shareSubmenu.setAttribute('aria-hidden', String(!open));
+    shareToggle.setAttribute('aria-expanded', String(open));
+  };
+
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setMenuOpen(!dropdown.classList.contains('open'));
+  });
+
+  dropdown.addEventListener('click', async (e) => {
+    const item = e.target.closest('.menu-item');
+    if (!item) return;
+
+    const action = item.dataset.menuAction;
+    if (action === 'download') {
+      e.stopPropagation();
+      setDownloadSubmenuOpen(!downloadSubmenu?.classList.contains('open'));
+      setShareSubmenuOpen(false);
+      return;
+    }
+    if (action === 'share') {
+      e.stopPropagation();
+      setShareSubmenuOpen(!shareSubmenu?.classList.contains('open'));
+      setDownloadSubmenuOpen(false);
+      return;
+    }
+    if (action === 'download-format') {
+      setMenuOpen(false);
+      await downloadResume(item.dataset.downloadFormat);
+      return;
+    }
+    if (action === 'share-current') {
+      setMenuOpen(false);
+      await shareResume();
+      return;
+    }
+    if (action === 'share-email') {
+      setMenuOpen(false);
+      openMailClient();
+      return;
+    }
+    if (action === 'share-embed') {
+      setMenuOpen(false);
+      await copyEmbedCode();
+      return;
+    }
+    if (action === 'share-link') {
+      setMenuOpen(false);
+      await copyShareLink();
+      return;
+    }
+    setMenuOpen(false);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!dropdown.classList.contains('open')) return;
+    if (e.target !== menuBtn && !dropdown.contains(e.target)) {
+      setMenuOpen(false);
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') setMenuOpen(false);
+  });
+}
+
 document.getElementById('btnSave').addEventListener('click', async () => {
   collectData();
   const errors = validateSections();
@@ -666,6 +1066,7 @@ window.addEventListener('beforeunload', (e) => {
 
 // ── BOOT ──
 buildLeftPanel();
+setupMenuDropdown();
 updatePreview();
 hasUnsavedChanges = false;
 const titleEl = document.getElementById('resume-title');

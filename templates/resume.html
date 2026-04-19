@@ -12,6 +12,36 @@
   <div class="topbar-left">
     <a href="/dashboard?tab=recent" class="back-link">←</a>
     <h1>Resume Editor</h1>
+    <div class="menu-wrap">
+      <button class="btn-menu" id="btnMenu" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menuDropdown">☰</button>
+      <div class="menu-dropdown" id="menuDropdown" role="menu" aria-hidden="true">
+        <div class="menu-submenu-wrap">
+          <button type="button" class="menu-item menu-item-parent" data-menu-action="download" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="downloadSubmenu">
+            <span>Download</span>
+            <span class="menu-caret">▸</span>
+          </button>
+          <div class="menu-submenu" id="downloadSubmenu" role="menu" aria-hidden="true">
+            <button type="button" class="menu-item menu-sub-item" data-menu-action="download-format" data-download-format="pdf" role="menuitem">PDF</button>
+            <button type="button" class="menu-item menu-sub-item" data-menu-action="download-format" data-download-format="docx" role="menuitem">DOCX</button>
+            <button type="button" class="menu-item menu-sub-item" data-menu-action="download-format" data-download-format="txt" role="menuitem">TXT</button>
+            <button type="button" class="menu-item menu-sub-item" data-menu-action="download-format" data-download-format="md" role="menuitem">MD</button>
+            <button type="button" class="menu-item menu-sub-item" data-menu-action="download-format" data-download-format="json" role="menuitem">JSON</button>
+          </div>
+        </div>
+        <div class="menu-submenu-wrap">
+          <button type="button" class="menu-item menu-item-parent" data-menu-action="share" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-controls="shareSubmenu">
+            <span>Share</span>
+            <span class="menu-caret">▸</span>
+          </button>
+          <div class="menu-submenu" id="shareSubmenu" role="menu" aria-hidden="true">
+            <button type="button" class="menu-item menu-sub-item" data-menu-action="share-current" role="menuitem">System</button>
+            <button type="button" class="menu-item menu-sub-item" data-menu-action="share-email" role="menuitem">Email</button>
+            <button type="button" class="menu-item menu-sub-item" data-menu-action="share-embed" role="menuitem">Embed</button>
+            <button type="button" class="menu-item menu-sub-item" data-menu-action="share-link" role="menuitem">Link</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   <input type="text" id="resume-title" class="title-input" placeholder="Give your resume a title..." />
   <button class="btn-save" id="btnSave">Save</button>
@@ -31,6 +61,8 @@
 <script type="application/json" id="template-type">{{ template_type | tojson }}</script>
 <script type="application/json" id="resume-content">{{ content | tojson }}</script>
 
+<script src="https://unpkg.com/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+<script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
 <script src="/static/resume.js"></script>
 
 </body>
