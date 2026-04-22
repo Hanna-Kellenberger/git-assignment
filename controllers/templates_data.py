@@ -1,4 +1,5 @@
-# Default field values shared across all resume types
+import copy
+
 DEFAULT_FIELDS = {
     "name":     "Your Name",
     "title":    "Professional Title",
@@ -33,14 +34,12 @@ DEFAULT_FIELDS = {
     "certifications": ["Certification 1", "Certification 2"]
 }
 
-# Template definitions — mirrors the Supabase templates table
 TEMPLATES = [
     {"id": 1, "name": "Modern Resume",       "html_file": "modern_resume.html",       "category": "Resume Template", "is_favorite": True},
     {"id": 2, "name": "Professional Resume", "html_file": "professional_resume.html", "category": "Resume Template", "is_favorite": False},
     {"id": 3, "name": "University Resume",   "html_file": "university_resume.html",   "category": "Resume Template", "is_favorite": False},
 ]
 
-# Maps html_file -> template_type key used by the editor
 TEMPLATE_TYPE_MAP = {
     "modern_resume.html":       "modern",
     "professional_resume.html": "professional",
@@ -48,6 +47,4 @@ TEMPLATE_TYPE_MAP = {
 }
 
 def get_default_content(html_file):
-    """Return default content for a given template html_file."""
-    import copy
     return copy.deepcopy(DEFAULT_FIELDS)

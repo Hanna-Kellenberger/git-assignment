@@ -7,28 +7,25 @@ function render(error = '', loading = false) {
                 <img src="/static/assets/logo.svg" alt="Resumaxing" class="auth-logo" />
             </div>
             <div class="auth-card">
-                <h2>Login to your account</h2>
+                <h2>Create an account</h2>
                 ${error ? `<p class="flash-msg">${error}</p>` : ''}
-                <form id="loginForm">
+                <form id="signupForm">
                     <div class="form-group">
                         <label>Email</label>
                         <input type="email" id="emailInput" name="email" placeholder="Enter your email" required />
                     </div>
                     <div class="form-group">
-                        <div class="label-row">
-                            <label>Password</label>
-                            <a href="/forgot-password" class="forgot">Forgot Password ?</a>
-                        </div>
+                        <label>Password</label>
                         <div class="input-wrap">
                             <input type="password" id="passwordInput" name="password" placeholder="Enter your password" required />
                             <span class="eye" id="eyeToggle">👁</span>
                         </div>
                     </div>
                     <button type="submit" class="btn-primary" ${loading ? 'disabled' : ''}>
-                        ${loading ? 'Logging in...' : 'Login now'}
+                        ${loading ? 'Creating account...' : 'Create account'}
                     </button>
                 </form>
-                <p class="switch-auth">Don't Have An Account? <a href="/signup">Sign Up</a></p>
+                <p class="switch-auth">Already Have An Account? <a href="/login">Log in</a></p>
             </div>
         </div>
     `;
@@ -45,23 +42,22 @@ function render(error = '', loading = false) {
         }
     });
 
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('emailInput').value;
         const password = document.getElementById('passwordInput').value;
-        const res = await fetch('/login', {
+        render('', true);
+        const res = await fetch('/signup', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ email, password })
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
         });
-        if (res.redirected) {
-            window.location.href = res.url;
+        const data = await res.json();
+        if (data.redirect) {
+            window.location.href = data.redirect;
         } else {
-            const text = await res.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(text, 'text/html');
-            const msg = doc.querySelector('.flash-msg');
-            render(msg ? msg.textContent : 'Login failed.');
+            render(data.error || 'Signup failed.');
         }
     });
 }
