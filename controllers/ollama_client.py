@@ -5,7 +5,6 @@ import urllib.error
 OLLAMA_BASE = "http://localhost:11434"
 
 def get_available_model():
-    """Returns the first available Ollama model, or raises if none found."""
     req = urllib.request.Request(f"{OLLAMA_BASE}/api/tags")
     with urllib.request.urlopen(req, timeout=5) as r:
         tags = json.loads(r.read())
@@ -15,7 +14,6 @@ def get_available_model():
     return models[0]
 
 def generate(prompt, timeout=60):
-    """Send a prompt to Ollama and return the response text."""
     model = get_available_model()
     print(f"Using Ollama model: {model}")
     payload = json.dumps({

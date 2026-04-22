@@ -171,7 +171,6 @@ function render() {
                     id="searchInput"
                     value="${escHtml(state.search)}"
                 />
-                <button class="btn-create" id="btnCreate">+ Create New Resume</button>
                 <div class="account-wrap">
                     <button class="account-btn" id="accountBtn" title="Account">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -249,11 +248,6 @@ function attachEvents() {
             state.search = '';
             render();
         });
-    });
-
-    document.getElementById('btnCreate').addEventListener('click', () => {
-        state.activeTab = 'Templates';
-        render();
     });
 
     document.getElementById('accountBtn').addEventListener('click', (e) => {
