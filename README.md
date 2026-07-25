@@ -27,7 +27,7 @@ This project’s main objective is to design a website that allows users to auto
 
 ### 1. Clone the repo
 ```bash
-git clone https://github.com/Hanna-Kellenberger/Resumaxing.git
+git clone https://github.com/Hannak1001/Resumaxing.git
 cd Resumaxing
 ```
 
